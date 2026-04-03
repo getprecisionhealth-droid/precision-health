@@ -190,3 +190,36 @@ export interface NutritionLog {
   notes: string | null
   created_at: string
 }
+
+export interface NutritionPlan {
+  id: string
+  trainer_id: string
+  client_id: string
+  title: string
+  description: string | null
+  target_calories: number | null
+  target_protein_g: number | null
+  target_carbs_g: number | null
+  target_fat_g: number | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  // Joined
+  meals?: NutritionPlanMeal[]
+  client?: Profile
+}
+
+export interface NutritionPlanMeal {
+  id: string
+  plan_id: string
+  meal_type: MealType
+  food_name: string
+  portion: string | null
+  calories: number | null
+  protein_g: number | null
+  carbs_g: number | null
+  fat_g: number | null
+  notes: string | null
+  sort_order: number | null
+  created_at: string
+}

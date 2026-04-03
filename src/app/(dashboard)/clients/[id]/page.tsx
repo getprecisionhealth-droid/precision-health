@@ -2,8 +2,8 @@
 
 import { use, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Activity, Target, Dumbbell, StickyNote, Calendar, Mail, Phone, Apple, Coffee, Sun, Moon, Cookie } from 'lucide-react'
-import { useClient, useHealthMetrics, useGoals, useNutritionLogs } from '@/hooks/use-data'
+import { ArrowLeft, Activity, Target, Dumbbell, StickyNote, Calendar, Mail, Phone, Apple, Coffee, Sun, Moon, Cookie, Trash2 } from 'lucide-react'
+import { useClient, useHealthMetrics, useGoals, useNutritionLogs, useNutritionPlans, useDeleteNutritionPlan, useWorkoutPlans, useDeleteWorkoutPlan } from '@/hooks/use-data'
 import { Card, CardContent, CardHeader, CardTitle, UserAvatar, Badge, Skeleton, Progress } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LogHealthDialog } from '@/components/health-metrics/log-health-dialog'
@@ -31,6 +31,14 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   const { data: goals } = useGoals(id)
   const today = new Date().toISOString().slice(0, 10)
   const { data: nutritionLogs } = useNutritionLogs(id, today)
+  
+  const { data: allNutritionPlans } = useNutritionPlans()
+  const nutritionPlans = allNutritionPlans?.filter(p => p.client_id === id) ?? []
+  const deleteNutritionPlan = useDeleteNutritionPlan()
+
+  const { data: allWorkoutPlans } = useWorkoutPlans()
+  const workoutPlans = allWorkoutPlans?.filter(p => p.client_id === id && p.plan_type === 'assigned') ?? []
+  const deleteWorkoutPlan = useDeleteWorkoutPlan()
 
   const client = tc?.client
   const latest = metrics?.[metrics.length - 1]
@@ -296,7 +304,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                 {['breakfast', 'lunch', 'dinner', 'snack'].map(mealType => {
                   const items = nutritionLogs.filter(l => l.meal_type === mealType)
                   if (!items.length) return null
-                  const MealIcon = MEAL_ICONS[mealType] ?? Apple
+                  const MealIcon = MEAL_ICONS[mealType as keyof typeof MEAL_ICONS] ?? Apple
                   const colorClass = MEAL_COLORS[mealType] ?? 'bg-surface-2 text-text-muted'
                   return (
                     <Card key={mealType}>
@@ -329,16 +337,103 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
               </div>
             </>
           )}
+
+          {/* Assigned Diet Plans */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-text-primary">Assigned Diet Plans</h3>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/nutrition-plans/new">Create Diet Plan</Link>
+              </Button>
+            </div>
+            {!nutritionPlans || nutritionPlans.length === 0 ? (
+               <div className="text-center py-8 text-text-muted border border-border border-dashed rounded-xl">
+                 <p className="text-sm">No diet plans assigned to {client.full_name}</p>
+               </div>
+            ) : (
+               <div className="grid grid-cols-1 gap-4">
+                 {nutritionPlans.map(plan => (
+                   <Card key={plan.id}>
+                     <CardContent className="pt-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-semibold text-text-primary">{plan.title}</h4>
+                            {plan.description && <p className="text-xs text-text-tertiary mt-1">{plan.description}</p>}
+                            <div className="flex gap-4 mt-3">
+                              {plan.target_calories && <p className="text-xs font-medium text-amber-500">{plan.target_calories} kcal</p>}
+                              {plan.target_protein_g && <p className="text-xs text-text-muted">P: {plan.target_protein_g}g</p>}
+                              {plan.target_carbs_g && <p className="text-xs text-text-muted">C: {plan.target_carbs_g}g</p>}
+                              {plan.target_fat_g && <p className="text-xs text-text-muted">F: {plan.target_fat_g}g</p>}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={deleteNutritionPlan.isPending}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              if (confirm('Are you sure you want to delete this diet plan?')) {
+                                deleteNutritionPlan.mutate(plan.id)
+                              }
+                            }}
+                            className="text-text-muted hover:text-red-400 p-1.5 rounded-md hover:bg-red-500/10 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                     </CardContent>
+                   </Card>
+                 ))}
+               </div>
+            )}
+          </div>
         </div>
       )}
 
       {activeTab === 'workouts' && (
-        <div className="text-center py-16">
-          <Dumbbell className="h-10 w-10 text-border mx-auto mb-3" />
-          <p className="text-sm text-text-tertiary">Workout logs coming soon</p>
-          <Button asChild className="mt-4" variant="outline">
-            <Link href="/workouts/new">Create a plan for {client.full_name}</Link>
-          </Button>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-text-primary">Assigned Workout Plans</h3>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/workouts/new">Create Workout Plan</Link>
+            </Button>
+          </div>
+          {!workoutPlans || workoutPlans.length === 0 ? (
+            <div className="text-center py-16">
+              <Dumbbell className="h-10 w-10 text-border mx-auto mb-3" />
+              <p className="text-sm text-text-tertiary">No workout plans assigned yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               {workoutPlans.map(plan => (
+                 <Card key={plan.id}>
+                    <CardContent className="pt-5 flex flex-col h-full">
+                       <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold text-text-primary">{plan.name}</h4>
+                          <button
+                            type="button"
+                            disabled={deleteWorkoutPlan.isPending}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              if (confirm('Are you sure you want to delete this plan?')) {
+                                deleteWorkoutPlan.mutate(plan.id)
+                              }
+                            }}
+                            className="text-text-muted hover:text-red-400 p-1.5 rounded-md hover:bg-red-500/10 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                       </div>
+                       {plan.description && <p className="text-xs text-text-tertiary line-clamp-2 mb-3">{plan.description}</p>}
+                       {plan.difficulty && (
+                          <span className={`self-start inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize mt-auto bg-surface-2 text-text-tertiary border-border`}>
+                            {plan.difficulty}
+                          </span>
+                       )}
+                    </CardContent>
+                 </Card>
+               ))}
+            </div>
+          )}
         </div>
       )}
     </div>

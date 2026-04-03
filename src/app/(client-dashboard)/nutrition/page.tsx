@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Trash2, Apple, Coffee, Sun, Moon, Cookie } from 'lucide-react'
-import { useProfile, useNutritionLogs, useLogNutrition, useDeleteNutritionLog } from '@/hooks/use-data'
+import { useProfile, useNutritionLogs, useLogNutrition, useDeleteNutritionLog, useMyNutritionPlans } from '@/hooks/use-data'
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input, FormField, Select } from '@/components/ui/input'
@@ -31,6 +31,9 @@ export default function NutritionPage() {
   const { data: logs, isLoading } = useNutritionLogs(profile?.id ?? '', selectedDate)
   const logNutrition = useLogNutrition()
   const deleteLog = useDeleteNutritionLog()
+  const { data: dietPlans } = useMyNutritionPlans()
+
+  const activePlan = dietPlans?.find(p => p.is_active)
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState({
@@ -120,6 +123,51 @@ export default function NutritionPage() {
           </div>
         }
       />
+
+      {/* Assigned Diet Plan */}
+      {activePlan && (
+        <Card className="mb-6 border-emerald-500/30 bg-emerald-500/5">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
+                  <Apple className="h-4 w-4 text-emerald-500" />
+                  Trainer Assigned Plan: {activePlan.title}
+                </h3>
+                {activePlan.description && <p className="text-xs text-text-tertiary mt-0.5">{activePlan.description}</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-4 mt-3">
+              {activePlan.target_calories && (
+                <div><span className="text-[10px] text-text-faint uppercase">Target Calories</span><p className="text-sm font-semibold text-amber-500 mt-0.5">{activePlan.target_calories} kcal</p></div>
+              )}
+              {activePlan.target_protein_g && (
+                <div><span className="text-[10px] text-text-faint uppercase">Target Protein</span><p className="text-sm font-semibold text-sky-400 mt-0.5">{activePlan.target_protein_g}g</p></div>
+              )}
+              {activePlan.target_carbs_g && (
+                <div><span className="text-[10px] text-text-faint uppercase">Target Carbs</span><p className="text-sm font-semibold text-emerald-400 mt-0.5">{activePlan.target_carbs_g}g</p></div>
+              )}
+              {activePlan.target_fat_g && (
+                <div><span className="text-[10px] text-text-faint uppercase">Target Fat</span><p className="text-sm font-semibold text-rose-400 mt-0.5">{activePlan.target_fat_g}g</p></div>
+              )}
+            </div>
+            
+            {activePlan.meals && activePlan.meals.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-emerald-500/10">
+                <p className="text-[10px] text-text-faint uppercase tracking-wider mb-2">Required Meals</p>
+                <div className="flex flex-wrap gap-2">
+                  {activePlan.meals.map(m => (
+                    <span key={m.id} className="inline-flex flex-col bg-surface border border-border px-2.5 py-1.5 rounded-md">
+                       <span className="text-[10px] text-text-muted capitalize mb-0.5">{m.meal_type}</span>
+                       <span className="text-xs font-medium text-text-secondary">{m.food_name} {m.portion && <span className="text-text-faint font-normal">({m.portion})</span>}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Daily Summary */}
       <div className="grid grid-cols-4 gap-3 mb-6">

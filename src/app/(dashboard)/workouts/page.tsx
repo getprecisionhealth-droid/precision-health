@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Plus, Dumbbell, ArrowRight, Search, Users, Clock } from 'lucide-react'
-import { useWorkoutPlans } from '@/hooks/use-data'
+import { Plus, Dumbbell, ArrowRight, Search, Users, Clock, Trash2 } from 'lucide-react'
+import { useWorkoutPlans, useDeleteWorkoutPlan } from '@/hooks/use-data'
 import { Card, CardContent, Skeleton } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +18,7 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 
 export default function WorkoutsPage() {
   const { data: plans, isLoading } = useWorkoutPlans()
+  const deletePlan = useDeleteWorkoutPlan()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'template' | 'assigned'>('all')
 
@@ -115,19 +116,35 @@ export default function WorkoutsPage() {
               <Card className="hover:border-text-faint transition-colors cursor-pointer group h-full">
                 <CardContent className="pt-5 flex flex-col h-full">
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="h-9 w-9 rounded-lg bg-indigo-600/15 flex items-center justify-center flex-shrink-0">
-                      <Dumbbell className="h-4 w-4 text-indigo-400" />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {plan.difficulty && (
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${DIFFICULTY_COLORS[plan.difficulty]}`}>
-                          {plan.difficulty}
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-lg bg-indigo-600/15 flex items-center justify-center flex-shrink-0">
+                        <Dumbbell className="h-4 w-4 text-indigo-400" />
+                      </div>
+                      <div className="flex flex-col items-start gap-1">
+                        {plan.difficulty && (
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${DIFFICULTY_COLORS[plan.difficulty]}`}>
+                            {plan.difficulty}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium bg-surface-2 text-text-tertiary border-border capitalize">
+                          {plan.plan_type}
                         </span>
-                      )}
-                      <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium bg-surface-2 text-text-tertiary border-border capitalize">
-                        {plan.plan_type}
-                      </span>
+                      </div>
                     </div>
+                    
+                    <button
+                      type="button"
+                      disabled={deletePlan.isPending}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (confirm('Are you sure you want to delete this plan?')) {
+                          deletePlan.mutate(plan.id)
+                        }
+                      }}
+                      className="text-text-muted hover:text-red-400 p-1.5 rounded-md hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
 
                   <p className="text-sm font-semibold text-text-primary leading-snug mb-1">{plan.name}</p>

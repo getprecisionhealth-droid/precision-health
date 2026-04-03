@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, TrainerClient, HealthMetric, WorkoutPlan, Goal, Exercise, NutritionLog } from '@/types/database'
+import type { Profile, TrainerClient, HealthMetric, WorkoutPlan, Goal, Exercise, NutritionLog, NutritionPlan } from '@/types/database'
 
 // ─── Keys ─────────────────────────────────────────────────────────────────────
 export const KEYS = {
@@ -12,6 +12,8 @@ export const KEYS = {
   healthMetrics: (clientId: string) => ['health-metrics', clientId] as const,
   workoutPlans: ['workout-plans'] as const,
   workoutPlan: (id: string) => ['workout-plan', id] as const,
+  nutritionPlans: ['nutrition-plans'] as const,
+  nutritionPlan: (id: string) => ['nutrition-plan', id] as const,
   exercises: ['exercises'] as const,
   goals: (clientId: string) => ['goals', clientId] as const,
   dashboardStats: ['dashboard-stats'] as const,
@@ -45,6 +47,7 @@ export function useClients() {
         .from('trainer_clients')
         .select(`*, client:profiles!trainer_clients_client_id_fkey(*)`)
         .eq('trainer_id', user.id)
+        .neq('status', 'archived')
         .order('created_at', { ascending: false })
       if (error) throw error
       return data as TrainerClient[]
@@ -198,6 +201,21 @@ export function useCreateWorkoutPlan() {
       return data
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.workoutPlans }),
+  })
+}
+
+export function useDeleteWorkoutPlan() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('workout_plans').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.workoutPlans })
+      qc.invalidateQueries({ queryKey: ['my-workout-plans'] })
+    },
   })
 }
 
@@ -508,5 +526,127 @@ export function useClientDashboardStats() {
         todayMeals: nutritionRes.data?.length ?? 0,
       }
     },
+  })
+}
+
+// ─── Nutrition Plans ──────────────────────────────────────────────────────────
+export function useNutritionPlans() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.nutritionPlans,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('nutrition_plans')
+        .select(`*, client:profiles!nutrition_plans_client_id_fkey(*)`)
+        .eq('trainer_id', user.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as NutritionPlan[]
+    },
+  })
+}
+
+export function useNutritionPlan(planId: string) {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.nutritionPlan(planId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nutrition_plans')
+        .select(`*, meals:nutrition_plan_meals(*)`)
+        .eq('id', planId)
+        .single()
+      if (error) throw error
+      return data as NutritionPlan
+    },
+    enabled: !!planId,
+  })
+}
+
+export function useMyNutritionPlans() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: ['my-nutrition-plans'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('nutrition_plans')
+        .select(`*, meals:nutrition_plan_meals(*)`)
+        .eq('client_id', user.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as NutritionPlan[]
+    },
+  })
+}
+
+export function useCreateNutritionPlan() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      title: string; description?: string; client_id: string;
+      target_calories?: number; target_protein_g?: number; target_carbs_g?: number; target_fat_g?: number
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('nutrition_plans')
+        .insert({ ...input, trainer_id: user.id })
+        .select().single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.nutritionPlans })
+      qc.invalidateQueries({ queryKey: ['my-nutrition-plans'] })
+    },
+  })
+}
+
+export function useAddNutritionPlanMeal() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      plan_id: string; meal_type: string; food_name: string; portion?: string;
+      calories?: number; protein_g?: number; carbs_g?: number; fat_g?: number; sort_order?: number;
+    }) => {
+      const { data, error } = await supabase
+        .from('nutrition_plan_meals').insert(input).select().single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: KEYS.nutritionPlan(vars.plan_id) }),
+  })
+}
+
+export function useDeleteNutritionPlan() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('nutrition_plans').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.nutritionPlans })
+      qc.invalidateQueries({ queryKey: ['my-nutrition-plans'] })
+    },
+  })
+}
+
+export function useDeleteNutritionPlanMeal() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, plan_id: _plan_id }: { id: string; plan_id: string }) => {
+      const { error } = await supabase.from('nutrition_plan_meals').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: KEYS.nutritionPlan(vars.plan_id) }),
   })
 }
