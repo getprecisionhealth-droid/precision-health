@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes
-  const publicRoutes = ['/login', '/signup', '/']
+  const publicRoutes = ['/login', '/signup', '/client-login', '/client-signup', '/']
   const isPublicRoute = publicRoutes.includes(pathname)
 
   // Redirect unauthenticated users to login
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
     // Determine role from user metadata (fast, no extra DB call)
     const role = (user.user_metadata?.role as string) ?? 'trainer'
 
-    const isAuthPage = pathname === '/login' || pathname === '/signup'
+    const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/client-login' || pathname === '/client-signup'
     const trainerRoutes = ['/dashboard', '/clients', '/workouts', '/health', '/goals', '/notes', '/settings']
     const clientRoutes = ['/client-dashboard', '/my-workouts', '/nutrition', '/my-health', '/my-goals', '/client-settings']
 

@@ -9,9 +9,9 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { loginSchema, type LoginInput } from '@/lib/validations'
 import { Button } from '@/components/ui/button'
-import { Input, Label, FormField } from '@/components/ui/input'
+import { Input, FormField } from '@/components/ui/input'
 
-export default function LoginPage() {
+export default function ClientLoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -29,6 +29,7 @@ export default function LoginPage() {
       email: data.email,
       password: data.password,
     })
+    
     if (error) {
       if (error.message.includes('Email not confirmed')) {
         setServerError('Please check your email and verify your account first.')
@@ -39,15 +40,24 @@ export default function LoginPage() {
       }
       return
     }
-    router.push('/dashboard')
+    
+    router.push('/client-dashboard')
     router.refresh()
   }
 
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-text-primary">Trainer Login</h2>
-        <p className="mt-1.5 text-sm text-text-tertiary">Sign in to your trainer account</p>
+        <div className="flex justify-center mb-6">
+          <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1L14 4.5V11.5L8 15L2 11.5V4.5L8 1Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+              <circle cx="8" cy="8" r="2.5" fill="white"/>
+            </svg>
+          </div>
+        </div>
+        <h2 className="text-2xl font-bold text-text-primary text-center">Client Sign In</h2>
+        <p className="mt-1.5 text-sm text-text-tertiary text-center">Log in to view your workouts and track progress</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -85,7 +95,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <Button type="submit" className="w-full mt-2" size="lg" loading={isSubmitting}>
+        <Button type="submit" className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white" size="lg" loading={isSubmitting}>
           {!isSubmitting && <><span>Sign in</span><ArrowRight className="h-4 w-4" /></>}
           {isSubmitting && 'Signing in…'}
         </Button>
@@ -93,15 +103,15 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-text-tertiary">
         Don&apos;t have an account?{' '}
-        <Link href="/signup" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
-          Create one free
+        <Link href="/client-signup" className="text-emerald-500 hover:text-emerald-400 font-medium transition-colors">
+          Create client account
         </Link>
       </p>
-
+      
       <div className="mt-8 pt-6 border-t border-border-subtle text-center">
          <p className="text-xs text-text-muted">
-           Are you a Client?{' '}
-           <Link href="/client-login" className="text-emerald-500 hover:underline">Client Login</Link>
+           Are you a Personal Trainer?{' '}
+           <Link href="/login" className="text-indigo-400 hover:underline">Trainer Login</Link>
          </p>
       </div>
     </div>
