@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, ArrowRight, Dumbbell } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, Dumbbell, Activity } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { signupSchema, type SignupInput } from '@/lib/validations'
 import { Button } from '@/components/ui/button'
@@ -58,8 +58,11 @@ export default function SignupPage() {
         {/* Role selector */}
         <div>
           <Label className="mb-2 block">I am a</Label>
-          <div className="grid grid-cols-1 gap-2">
-            {([['trainer', 'Personal Trainer', 'Manage clients, create plans, track progress']] as const).map(([val, title, desc]) => (
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              ['trainer', 'Personal Trainer', 'Manage clients & plans', Dumbbell],
+              ['client', 'Client', 'Track workouts & nutrition', Activity],
+            ] as const).map(([val, title, desc, RoleIcon]) => (
               <button
                 key={val}
                 type="button"
@@ -67,13 +70,13 @@ export default function SignupPage() {
                 className={cn(
                   'flex items-center gap-3 rounded-lg border p-3.5 text-left transition-all',
                   role === val
-                    ? 'border-indigo-500 bg-indigo-500/10 text-text-primary'
+                    ? val === 'trainer' ? 'border-indigo-500 bg-indigo-500/10 text-text-primary' : 'border-emerald-500 bg-emerald-500/10 text-text-primary'
                     : 'border-border bg-surface text-text-tertiary hover:border-text-faint'
                 )}
               >
                 <div className={cn('h-8 w-8 rounded-md flex items-center justify-center flex-shrink-0',
-                  role === val ? 'bg-indigo-600' : 'bg-surface-2')}>
-                  <Dumbbell className="h-4 w-4 text-white" />
+                  role === val ? (val === 'trainer' ? 'bg-indigo-600' : 'bg-emerald-600') : 'bg-surface-2')}>
+                  <RoleIcon className="h-4 w-4 text-white" />
                 </div>
                 <div>
                   <p className={cn('text-sm font-medium', role === val ? 'text-text-primary' : 'text-text-secondary')}>{title}</p>

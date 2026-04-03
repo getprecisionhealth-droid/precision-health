@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, TrainerClient, HealthMetric, WorkoutPlan, Goal, Exercise } from '@/types/database'
+import type { Profile, TrainerClient, HealthMetric, WorkoutPlan, Goal, Exercise, NutritionLog } from '@/types/database'
 
 // ─── Keys ─────────────────────────────────────────────────────────────────────
 export const KEYS = {
@@ -310,6 +310,202 @@ export function useDashboardStats() {
         activeClients: active,
         newClientsThisMonth: thisMonth,
         totalPlans: plansRes.data?.length ?? 0,
+      }
+    },
+  })
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CLIENT-SPECIFIC HOOKS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── My Trainer ───────────────────────────────────────────────────────────
+export function useMyTrainer() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: ['my-trainer'] as const,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('trainer_clients')
+        .select(`*, trainer:profiles!trainer_clients_trainer_id_fkey(*)`)
+        .eq('client_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle()
+      if (error) throw error
+      return data as TrainerClient | null
+    },
+  })
+}
+
+// ─── My Workout Plans ─────────────────────────────────────────────────────
+export function useMyWorkoutPlans() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: ['my-workout-plans'] as const,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('workout_plans')
+        .select(`*, exercises:workout_plan_exercises(*, exercise:exercises(*)), trainer:profiles!workout_plans_trainer_id_fkey(full_name)`)
+        .eq('client_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as WorkoutPlan[]
+    },
+  })
+}
+
+// ─── My Goals ─────────────────────────────────────────────────────────────
+export function useMyGoals() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: ['my-goals'] as const,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('goals').select('*')
+        .eq('client_id', user.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as Goal[]
+    },
+  })
+}
+
+// ─── My Health Metrics ────────────────────────────────────────────────────
+export function useMyHealthMetrics() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: ['my-health-metrics'] as const,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('health_metrics').select('*')
+        .eq('client_id', user.id)
+        .order('metric_date', { ascending: true })
+      if (error) throw error
+      return data as HealthMetric[]
+    },
+  })
+}
+
+// ─── Nutrition Logs ───────────────────────────────────────────────────────
+export function useNutritionLogs(clientId: string, date?: string) {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: ['nutrition-logs', clientId, date] as const,
+    queryFn: async () => {
+      let q = supabase.from('nutrition_logs').select('*').eq('client_id', clientId)
+      if (date) q = q.eq('log_date', date)
+      q = q.order('created_at', { ascending: true })
+      const { data, error } = await q
+      if (error) throw error
+      return data as NutritionLog[]
+    },
+    enabled: !!clientId,
+  })
+}
+
+export function useLogNutrition() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      client_id: string; log_date: string; meal_type: string;
+      food_name: string; calories?: number; protein_g?: number;
+      carbs_g?: number; fat_g?: number; notes?: string
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('nutrition_logs')
+        .insert({ ...input, logged_by: user.id })
+        .select().single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['nutrition-logs', vars.client_id] })
+      qc.invalidateQueries({ queryKey: ['client-dashboard-stats'] })
+    },
+  })
+}
+
+export function useDeleteNutritionLog() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, client_id }: { id: string; client_id: string }) => {
+      const { error } = await supabase.from('nutrition_logs').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['nutrition-logs', vars.client_id] })
+      qc.invalidateQueries({ queryKey: ['client-dashboard-stats'] })
+    },
+  })
+}
+
+// ─── Log Workout Session ──────────────────────────────────────────────────
+export function useLogWorkoutSession() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      plan_id: string; session_date: string; duration_mins?: number;
+      overall_feeling?: number; notes?: string;
+      sets?: { exercise_id: string; set_number: number; reps_completed?: number; weight_kg?: number; rpe?: number }[]
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data: log, error: logError } = await supabase
+        .from('workout_logs')
+        .insert({
+          client_id: user.id, plan_id: input.plan_id, logged_by: user.id,
+          session_date: input.session_date, duration_mins: input.duration_mins,
+          overall_feeling: input.overall_feeling, notes: input.notes,
+        })
+        .select().single()
+      if (logError) throw logError
+      if (input.sets?.length) {
+        const { error: setsError } = await supabase
+          .from('workout_log_sets')
+          .insert(input.sets.map(s => ({ ...s, log_id: log.id })))
+        if (setsError) throw setsError
+      }
+      return log
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['my-workout-plans'] }),
+  })
+}
+
+// ─── Client Dashboard Stats ──────────────────────────────────────────────
+export function useClientDashboardStats() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: ['client-dashboard-stats'] as const,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const today = new Date().toISOString().slice(0, 10)
+      const [goalsRes, metricsRes, plansRes, nutritionRes] = await Promise.all([
+        supabase.from('goals').select('id, status').eq('client_id', user.id),
+        supabase.from('health_metrics').select('id').eq('client_id', user.id),
+        supabase.from('workout_plans').select('id').eq('client_id', user.id).eq('is_active', true),
+        supabase.from('nutrition_logs').select('id').eq('client_id', user.id).eq('log_date', today),
+      ])
+      const goals = goalsRes.data ?? []
+      return {
+        activeGoals: goals.filter(g => g.status === 'active').length,
+        totalMetrics: metricsRes.data?.length ?? 0,
+        activePlans: plansRes.data?.length ?? 0,
+        todayMeals: nutritionRes.data?.length ?? 0,
       }
     },
   })
