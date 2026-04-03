@@ -18,7 +18,7 @@ const NAV_ITEMS = [
   { href: '/client-dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/my-workouts', icon: Dumbbell, label: 'My Workouts' },
   { href: '/nutrition', icon: Apple, label: 'Nutrition Log' },
-  { href: '/calendar', icon: CalendarIcon, label: 'Schedule & Booking' },
+  { href: '/my-calendar', icon: CalendarIcon, label: 'Schedule & Booking' },
   { href: '/my-health', icon: Activity, label: 'Health Metrics' },
   { href: '/my-goals', icon: Target, label: 'My Goals' },
 ]
