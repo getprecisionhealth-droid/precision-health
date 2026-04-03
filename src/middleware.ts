@@ -24,7 +24,6 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-
   const { pathname } = request.nextUrl
 
   // Public routes
@@ -36,9 +35,37 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && (pathname === '/login' || pathname === '/signup')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // For authenticated users: role-based routing
+  if (user) {
+    // Determine role from user metadata (fast, no extra DB call)
+    const role = (user.user_metadata?.role as string) ?? 'trainer'
+
+    const isAuthPage = pathname === '/login' || pathname === '/signup'
+    const trainerRoutes = ['/dashboard', '/clients', '/workouts', '/health', '/goals', '/notes', '/settings']
+    const clientRoutes = ['/client-dashboard', '/my-workouts', '/nutrition', '/my-health', '/my-goals', '/client-settings']
+
+    const isTrainerRoute = trainerRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
+    const isClientRoute = clientRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
+
+    // Redirect from auth pages to correct dashboard
+    if (isAuthPage) {
+      const dest = role === 'client' ? '/client-dashboard' : '/dashboard'
+      return NextResponse.redirect(new URL(dest, request.url))
+    }
+
+    // Redirect root to correct dashboard
+    if (pathname === '/') {
+      const dest = role === 'client' ? '/client-dashboard' : '/dashboard'
+      return NextResponse.redirect(new URL(dest, request.url))
+    }
+
+    // Block cross-role access
+    if (role === 'client' && isTrainerRoute) {
+      return NextResponse.redirect(new URL('/client-dashboard', request.url))
+    }
+    if (role === 'trainer' && isClientRoute) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
 
   return supabaseResponse

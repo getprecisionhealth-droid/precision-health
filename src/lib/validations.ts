@@ -34,7 +34,9 @@ export const clientSchema = z.object({
   phone: z.string().optional(),
   date_of_birth: z.string().optional(),
   gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),
-  height_cm: z.coerce.number().min(100).max(250).optional(),
+  height_cm: z.union([z.coerce.number().min(100).max(250), z.literal(''), z.undefined(), z.null()])
+    .transform(v => (v === '' || v == null ? undefined : Number(v)))
+    .optional(),
   goal_summary: z.string().max(300).optional(),
 })
 

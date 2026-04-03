@@ -32,7 +32,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
   if (!client) return (
     <div className="p-8 text-center">
-      <p className="text-[#71717a]">Client not found</p>
+      <p className="text-text-tertiary">Client not found</p>
       <Button asChild variant="outline" className="mt-4"><Link href="/clients">Back</Link></Button>
     </div>
   )
@@ -47,7 +47,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   return (
     <div className="p-8 max-w-5xl mx-auto">
       {/* Back */}
-      <Link href="/clients" className="inline-flex items-center gap-1.5 text-xs text-[#71717a] hover:text-[#a1a1aa] mb-6 transition-colors">
+      <Link href="/clients" className="inline-flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary mb-6 transition-colors">
         <ArrowLeft className="h-3.5 w-3.5" /> Back to clients
       </Link>
 
@@ -58,26 +58,26 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             <UserAvatar name={client.full_name} src={client.avatar_url} size="lg" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-lg font-bold text-[#fafafa]">{client.full_name}</h1>
+                <h1 className="text-lg font-bold text-text-primary">{client.full_name}</h1>
                 <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[tc?.status ?? 'active']}`}>
                   {tc?.status}
                 </span>
               </div>
               <div className="flex items-center gap-4 mt-2 flex-wrap">
-                <span className="flex items-center gap-1.5 text-xs text-[#71717a]">
+                <span className="flex items-center gap-1.5 text-xs text-text-tertiary">
                   <Mail className="h-3 w-3" />{client.email}
                 </span>
                 {client.phone && (
-                  <span className="flex items-center gap-1.5 text-xs text-[#71717a]">
+                  <span className="flex items-center gap-1.5 text-xs text-text-tertiary">
                     <Phone className="h-3 w-3" />{client.phone}
                   </span>
                 )}
-                <span className="flex items-center gap-1.5 text-xs text-[#71717a]">
+                <span className="flex items-center gap-1.5 text-xs text-text-tertiary">
                   <Calendar className="h-3 w-3" />Since {formatDate(tc?.onboarding_date ?? '')}
                 </span>
               </div>
               {tc?.goal_summary && (
-                <p className="text-xs text-[#71717a] mt-2 max-w-xl leading-relaxed">
+                <p className="text-xs text-text-tertiary mt-2 max-w-xl leading-relaxed">
                   🎯 {tc.goal_summary}
                 </p>
               )}
@@ -90,7 +90,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
           {/* Quick stats row */}
           {latest && (
-            <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-[#1a1a1f]">
+            <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-border-subtle">
               {[
                 { label: 'Weight', value: latest.weight_kg ? `${latest.weight_kg} kg` : '—' },
                 { label: 'Body Fat', value: latest.body_fat_pct ? `${latest.body_fat_pct}%` : '—' },
@@ -98,8 +98,8 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                 { label: 'Resting HR', value: latest.resting_hr ? `${latest.resting_hr} bpm` : '—' },
               ].map(({ label, value }) => (
                 <div key={label} className="text-center">
-                  <p className="text-[10px] text-[#52525b] uppercase tracking-wide">{label}</p>
-                  <p className="text-lg font-bold text-[#fafafa] mt-0.5">{value}</p>
+                  <p className="text-[10px] text-text-muted uppercase tracking-wide">{label}</p>
+                  <p className="text-lg font-bold text-text-primary mt-0.5">{value}</p>
                 </div>
               ))}
             </div>
@@ -108,7 +108,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
       </Card>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-[#1a1a1f]">
+      <div className="flex gap-1 mb-6 border-b border-border-subtle">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -116,7 +116,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               activeTab === tab.id
                 ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-[#71717a] hover:text-[#a1a1aa]'
+                : 'border-transparent text-text-tertiary hover:text-text-secondary'
             }`}
           >
             <tab.icon className="h-3.5 w-3.5" />
@@ -139,8 +139,8 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             <CardContent>
               {!goals || goals.filter(g => g.status === 'active').length === 0 ? (
                 <div className="text-center py-6">
-                  <Target className="h-6 w-6 text-[#27272a] mx-auto mb-2" />
-                  <p className="text-xs text-[#52525b]">No active goals</p>
+                  <Target className="h-6 w-6 text-border mx-auto mb-2" />
+                  <p className="text-xs text-text-muted">No active goals</p>
                   <AddGoalDialog clientId={id} trigger={<Button size="sm" variant="outline" className="mt-3">Set Goal</Button>} />
                 </div>
               ) : (
@@ -150,12 +150,12 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                     return (
                       <div key={goal.id}>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-sm text-[#fafafa] font-medium">{goal.title}</span>
+                          <span className="text-sm text-text-primary font-medium">{goal.title}</span>
                           <span className="text-xs text-indigo-400 font-medium">{pct}%</span>
                         </div>
                         <Progress value={pct} />
                         {goal.target_date && (
-                          <p className="text-[10px] text-[#52525b] mt-1">Target: {formatDate(goal.target_date)}</p>
+                          <p className="text-[10px] text-text-muted mt-1">Target: {formatDate(goal.target_date)}</p>
                         )}
                       </div>
                     )
@@ -188,8 +188,8 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             </Card>
           </div>
           {(!metrics || metrics.length === 0) && (
-            <div className="text-center py-10 text-[#52525b]">
-              <Activity className="h-8 w-8 mx-auto mb-3 text-[#27272a]" />
+            <div className="text-center py-10 text-text-muted">
+              <Activity className="h-8 w-8 mx-auto mb-3 text-border" />
               <p className="text-sm">No health metrics logged yet</p>
               <LogHealthDialog clientId={id} clientName={client.full_name}
                 trigger={<Button size="sm" className="mt-3">Log First Entry</Button>} />
@@ -205,8 +205,8 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           </div>
           {!goals || goals.length === 0 ? (
             <div className="text-center py-16">
-              <Target className="h-10 w-10 text-[#27272a] mx-auto mb-3" />
-              <p className="text-sm text-[#71717a]">No goals set yet</p>
+              <Target className="h-10 w-10 text-border mx-auto mb-3" />
+              <p className="text-sm text-text-tertiary">No goals set yet</p>
               <AddGoalDialog clientId={id} trigger={<Button className="mt-4">Set First Goal</Button>} />
             </div>
           ) : (
@@ -219,19 +219,19 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-sm font-semibold text-[#fafafa]">{goal.title}</h3>
+                            <h3 className="text-sm font-semibold text-text-primary">{goal.title}</h3>
                             <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[goal.status]}`}>
                               {goal.status}
                             </span>
                             {goal.timeframe && (
-                              <span className="text-[10px] text-[#52525b] capitalize">{goal.timeframe}-term</span>
+                              <span className="text-[10px] text-text-muted capitalize">{goal.timeframe}-term</span>
                             )}
                           </div>
-                          {goal.description && <p className="text-xs text-[#71717a] mb-3">{goal.description}</p>}
+                          {goal.description && <p className="text-xs text-text-tertiary mb-3">{goal.description}</p>}
                           {goal.target_value !== null && (
                             <div>
                               <div className="flex items-center justify-between text-xs mb-1.5">
-                                <span className="text-[#71717a]">
+                                <span className="text-text-tertiary">
                                   {goal.current_value ?? goal.baseline_value ?? 0} {goal.target_unit} →{' '}
                                   {goal.target_value} {goal.target_unit}
                                 </span>
@@ -242,7 +242,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                           )}
                         </div>
                         {goal.target_date && (
-                          <p className="text-xs text-[#52525b] flex-shrink-0">Due {formatDate(goal.target_date)}</p>
+                          <p className="text-xs text-text-muted flex-shrink-0">Due {formatDate(goal.target_date)}</p>
                         )}
                       </div>
                     </CardContent>
@@ -256,8 +256,8 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
       {activeTab === 'workouts' && (
         <div className="text-center py-16">
-          <Dumbbell className="h-10 w-10 text-[#27272a] mx-auto mb-3" />
-          <p className="text-sm text-[#71717a]">Workout logs coming soon</p>
+          <Dumbbell className="h-10 w-10 text-border mx-auto mb-3" />
+          <p className="text-sm text-text-tertiary">Workout logs coming soon</p>
           <Button asChild className="mt-4" variant="outline">
             <Link href="/workouts/new">Create a plan for {client.full_name}</Link>
           </Button>

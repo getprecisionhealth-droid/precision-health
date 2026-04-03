@@ -27,10 +27,10 @@ function CustomTooltip({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-[#27272a] bg-[#111113] px-3 py-2 shadow-xl">
-      <p className="text-[10px] text-[#71717a] mb-1">{label}</p>
+    <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-xl">
+      <p className="text-[10px] text-text-tertiary mb-1">{label}</p>
       {payload.map((p) => (
-        <p key={p.name} className="text-sm font-semibold text-[#fafafa]">{p.value}</p>
+        <p key={p.name} className="text-sm font-semibold text-text-primary">{p.value}</p>
       ))}
     </div>
   )
@@ -47,7 +47,7 @@ export function HealthChart({ metrics, metric, label, color = '#6366f1', referen
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-[160px]">
-        <p className="text-xs text-[#3f3f46]">No data yet — log your first entry</p>
+        <p className="text-xs text-text-faint">No data yet — log your first entry</p>
       </div>
     )
   }
@@ -61,16 +61,16 @@ export function HealthChart({ metrics, metric, label, color = '#6366f1', referen
     <div className="h-[180px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1f" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fill: '#52525b', fontSize: 10 }}
+            tick={{ fill: 'var(--color-chart-axis)', fontSize: 10 }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
           />
           <YAxis
-            tick={{ fill: '#52525b', fontSize: 10 }}
+            tick={{ fill: 'var(--color-chart-axis)', fontSize: 10 }}
             axisLine={false}
             tickLine={false}
             domain={[min - padding, max + padding]}
@@ -78,7 +78,7 @@ export function HealthChart({ metrics, metric, label, color = '#6366f1', referen
           />
           <Tooltip content={<CustomTooltip />} />
           {referenceValue && (
-            <ReferenceLine y={referenceValue} stroke="#27272a" strokeDasharray="4 4" />
+            <ReferenceLine y={referenceValue} stroke="var(--color-border)" strokeDasharray="4 4" />
           )}
           <Line
             type="monotone"

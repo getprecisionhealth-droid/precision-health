@@ -42,8 +42,8 @@ export default function LoginPage() {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-[#fafafa]">Welcome back</h2>
-        <p className="mt-1.5 text-sm text-[#71717a]">Sign in to your trainer account</p>
+        <h2 className="text-2xl font-bold text-text-primary">Welcome back</h2>
+        <p className="mt-1.5 text-sm text-text-tertiary">Sign in to your trainer account</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -68,7 +68,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -87,7 +87,7 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-[#71717a]">
+      <p className="mt-6 text-center text-sm text-text-tertiary">
         Don&apos;t have an account?{' '}
         <Link href="/signup" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
           Create one free

@@ -99,7 +99,7 @@ function AddNoteDialog({ clientId, clientName }: { clientId: string; clientName:
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  general: 'text-[#71717a]', session: 'text-indigo-400',
+  general: 'text-text-tertiary', session: 'text-indigo-400',
   progress: 'text-green-400', nutrition: 'text-yellow-400',
   medical: 'text-red-400', goal: 'text-purple-400',
 }
@@ -111,51 +111,51 @@ function ClientNoteSection({ tc }: { tc: TrainerClient }) {
   if (!client) return null
 
   return (
-    <div className="border border-[#1a1a1f] rounded-xl overflow-hidden">
+    <div className="border border-border-subtle rounded-xl overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-[#0d0d10] transition-colors"
+        className="w-full flex items-center justify-between p-4 hover:bg-surface-alt transition-colors"
       >
         <div className="flex items-center gap-3">
           <UserAvatar name={client.full_name} size="sm" />
           <div className="text-left">
-            <p className="text-sm font-semibold text-[#fafafa]">{client.full_name}</p>
-            <p className="text-[10px] text-[#52525b]">{notes?.length ?? 0} note{notes?.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm font-semibold text-text-primary">{client.full_name}</p>
+            <p className="text-[10px] text-text-muted">{notes?.length ?? 0} note{notes?.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <AddNoteDialog clientId={tc.client_id} clientName={client.full_name} />
-          {expanded ? <ChevronDown className="h-4 w-4 text-[#52525b]" /> : <ChevronRight className="h-4 w-4 text-[#52525b]" />}
+          {expanded ? <ChevronDown className="h-4 w-4 text-text-muted" /> : <ChevronRight className="h-4 w-4 text-text-muted" />}
         </div>
       </button>
 
       {expanded && (
-        <div className="border-t border-[#1a1a1f] p-4 bg-[#09090b]">
+        <div className="border-t border-border-subtle p-4 bg-background">
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
             </div>
           ) : !notes || notes.length === 0 ? (
             <div className="text-center py-6">
-              <StickyNote className="h-6 w-6 text-[#27272a] mx-auto mb-2" />
-              <p className="text-xs text-[#52525b]">No notes yet — add your first observation</p>
+              <StickyNote className="h-6 w-6 text-border mx-auto mb-2" />
+              <p className="text-xs text-text-muted">No notes yet — add your first observation</p>
             </div>
           ) : (
             <div className="space-y-2">
               {notes.map(note => (
-                <div key={note.id} className="rounded-lg border border-[#1a1a1f] bg-[#0d0d10] p-3">
+                <div key={note.id} className="rounded-lg border border-border-subtle bg-surface-alt p-3">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div>
-                      {note.title && <p className="text-xs font-semibold text-[#fafafa]">{note.title}</p>}
+                      {note.title && <p className="text-xs font-semibold text-text-primary">{note.title}</p>}
                       <div className="flex items-center gap-2">
                         <span className={`text-[10px] capitalize font-medium ${CATEGORY_COLORS[note.category]}`}>
                           {note.category}
                         </span>
-                        <span className="text-[10px] text-[#3f3f46]">{formatRelativeTime(note.created_at)}</span>
+                        <span className="text-[10px] text-text-faint">{formatRelativeTime(note.created_at)}</span>
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-[#a1a1aa] leading-relaxed mt-1">{note.content}</p>
+                  <p className="text-xs text-text-secondary leading-relaxed mt-1">{note.content}</p>
                 </div>
               ))}
             </div>
@@ -180,8 +180,8 @@ export default function NotesPage() {
         </div>
       ) : activeClients.length === 0 ? (
         <div className="text-center py-20">
-          <StickyNote className="h-10 w-10 text-[#27272a] mx-auto mb-4" />
-          <p className="text-sm text-[#71717a]">No active clients to write notes for</p>
+          <StickyNote className="h-10 w-10 text-border mx-auto mb-4" />
+          <p className="text-sm text-text-tertiary">No active clients to write notes for</p>
           <Button asChild className="mt-4" variant="outline">
             <Link href="/clients">Go to Clients</Link>
           </Button>

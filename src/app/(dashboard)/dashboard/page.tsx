@@ -15,12 +15,12 @@ function StatCard({ label, value, sub, icon: Icon, accent = false }:
       <CardContent className="pt-5">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs text-[#71717a] font-medium uppercase tracking-wide">{label}</p>
-            <p className="text-3xl font-bold text-[#fafafa] mt-1 tracking-tight">{value}</p>
-            {sub && <p className="text-xs text-[#52525b] mt-1">{sub}</p>}
+            <p className="text-xs text-text-tertiary font-medium uppercase tracking-wide">{label}</p>
+            <p className="text-3xl font-bold text-text-primary mt-1 tracking-tight">{value}</p>
+            {sub && <p className="text-xs text-text-muted mt-1">{sub}</p>}
           </div>
-          <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${accent ? 'bg-indigo-600/20' : 'bg-[#1a1a1f]'}`}>
-            <Icon className={`h-4 w-4 ${accent ? 'text-indigo-400' : 'text-[#52525b]'}`} />
+          <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${accent ? 'bg-indigo-600/20' : 'bg-surface-2'}`}>
+            <Icon className={`h-4 w-4 ${accent ? 'text-indigo-400' : 'text-text-muted'}`} />
           </div>
         </div>
       </CardContent>
@@ -92,30 +92,30 @@ export default function DashboardPage() {
                 </div>
               ) : recentClients.length === 0 ? (
                 <div className="text-center py-10">
-                  <Users className="h-8 w-8 text-[#27272a] mx-auto mb-3" />
-                  <p className="text-sm text-[#52525b]">No clients yet</p>
+                  <Users className="h-8 w-8 text-border mx-auto mb-3" />
+                  <p className="text-sm text-text-muted">No clients yet</p>
                   <Button asChild size="sm" className="mt-3">
                     <Link href="/clients/new">Add your first client</Link>
                   </Button>
                 </div>
               ) : (
-                <div className="divide-y divide-[#1a1a1f]">
+                <div className="divide-y divide-border-subtle">
                   {recentClients.map((tc) => (
                     <Link
                       key={tc.id}
                       href={`/clients/${tc.client_id}`}
-                      className="flex items-center gap-3 py-3 hover:bg-[#1a1a1f] -mx-5 px-5 transition-colors first:pt-0 last:pb-0"
+                      className="flex items-center gap-3 py-3 hover:bg-surface-2 -mx-5 px-5 transition-colors first:pt-0 last:pb-0"
                     >
                       <UserAvatar name={tc.client?.full_name ?? 'Client'} src={tc.client?.avatar_url} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#fafafa] truncate">{tc.client?.full_name}</p>
-                        <p className="text-xs text-[#52525b] truncate">{tc.client?.email}</p>
+                        <p className="text-sm font-medium text-text-primary truncate">{tc.client?.full_name}</p>
+                        <p className="text-xs text-text-muted truncate">{tc.client?.email}</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[tc.status]}`}>
                           {tc.status}
                         </span>
-                        <span className="text-[10px] text-[#3f3f46]">{formatRelativeTime(tc.created_at)}</span>
+                        <span className="text-[10px] text-text-faint">{formatRelativeTime(tc.created_at)}</span>
                       </div>
                     </Link>
                   ))}
@@ -144,8 +144,8 @@ export default function DashboardPage() {
             <CardContent className="pt-0">
               {!plans || plans.length === 0 ? (
                 <div className="text-center py-8">
-                  <Dumbbell className="h-7 w-7 text-[#27272a] mx-auto mb-2" />
-                  <p className="text-xs text-[#52525b] mb-3">No plans yet</p>
+                  <Dumbbell className="h-7 w-7 text-border mx-auto mb-2" />
+                  <p className="text-xs text-text-muted mb-3">No plans yet</p>
                   <Button asChild size="sm" variant="outline">
                     <Link href="/workouts/new">Create plan</Link>
                   </Button>
@@ -156,14 +156,14 @@ export default function DashboardPage() {
                     <Link
                       key={plan.id}
                       href={`/workouts/${plan.id}`}
-                      className="flex items-center gap-3 p-2.5 rounded-md hover:bg-[#1a1a1f] transition-colors group"
+                      className="flex items-center gap-3 p-2.5 rounded-md hover:bg-surface-2 transition-colors group"
                     >
                       <div className="h-7 w-7 rounded bg-indigo-600/15 flex items-center justify-center flex-shrink-0">
                         <Dumbbell className="h-3.5 w-3.5 text-indigo-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-[#fafafa] truncate">{plan.name}</p>
-                        <p className="text-[10px] text-[#52525b]">
+                        <p className="text-xs font-medium text-text-primary truncate">{plan.name}</p>
+                        <p className="text-[10px] text-text-muted">
                           {plan.client ? `→ ${(plan.client as {full_name: string}).full_name}` : 'Template'}
                         </p>
                       </div>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
               ].map(({ href, icon: Icon, label }) => (
                 <Button key={href} variant="ghost" className="w-full justify-start gap-3 h-9" asChild>
                   <Link href={href}>
-                    <Icon className="h-3.5 w-3.5 text-[#52525b]" />
+                    <Icon className="h-3.5 w-3.5 text-text-muted" />
                     <span className="text-xs">{label}</span>
                   </Link>
                 </Button>

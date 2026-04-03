@@ -70,40 +70,17 @@ export function useClient(clientId: string) {
 }
 
 export function useAddClient() {
-  const supabase = createClient()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: {
       full_name: string; email: string; phone?: string;
       date_of_birth?: string; gender?: string; height_cm?: number; goal_summary?: string
     }) => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-
-      // In production: use a server action with service role key to create auth user
-      // For scaffold: create profile entry for an invited client
-      const clientId = crypto.randomUUID()
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: clientId,
-        role: 'client',
-        full_name: input.full_name,
-        email: input.email,
-        phone: input.phone ?? null,
-        date_of_birth: input.date_of_birth ?? null,
-        gender: input.gender ?? null,
-        height_cm: input.height_cm ?? null,
-        is_active: true,
-      })
-      if (profileError) throw profileError
-
-      const { error: linkError } = await supabase.from('trainer_clients').insert({
-        trainer_id: user.id,
-        client_id: clientId,
-        status: 'active',
-        goal_summary: input.goal_summary ?? null,
-      })
-      if (linkError) throw linkError
-      return clientId
+      // Use secure server action (bypasses RLS with service role key)
+      const { addClientAction } = await import('@/app/actions/client-actions')
+      const result = await addClientAction(input)
+      if (result.error) throw new Error(result.error)
+      return result.clientId!
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.clients }),
   })

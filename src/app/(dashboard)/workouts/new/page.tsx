@@ -59,13 +59,13 @@ export default function NewWorkoutPlanPage() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
-      <Link href="/workouts" className="inline-flex items-center gap-1.5 text-xs text-[#71717a] hover:text-[#a1a1aa] mb-8 transition-colors">
+      <Link href="/workouts" className="inline-flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary mb-8 transition-colors">
         <ArrowLeft className="h-3.5 w-3.5" /> Back to plans
       </Link>
 
       <div className="mb-8">
-        <h1 className="text-xl font-semibold text-[#fafafa]">Create Workout Plan</h1>
-        <p className="text-sm text-[#71717a] mt-0.5">Build a reusable template or assign directly to a client</p>
+        <h1 className="text-xl font-semibold text-text-primary">Create Workout Plan</h1>
+        <p className="text-sm text-text-tertiary mt-0.5">Build a reusable template or assign directly to a client</p>
       </div>
 
       {/* Step indicators */}
@@ -76,12 +76,12 @@ export default function NewWorkoutPlanPage() {
               'h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors',
               step > s.id ? 'bg-indigo-600 text-white' :
               step === s.id ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/40' :
-              'bg-[#1a1a1f] text-[#52525b] border border-[#27272a]'
+              'bg-surface text-text-muted border border-border-subtle'
             )}>
               {step > s.id ? <Check className="h-3.5 w-3.5" /> : s.id}
             </div>
-            <span className={cn('text-xs', step === s.id ? 'text-[#fafafa]' : 'text-[#52525b]')}>{s.label}</span>
-            {i < STEPS.length - 1 && <div className="w-8 h-px bg-[#27272a] mx-1" />}
+            <span className={cn('text-xs', step === s.id ? 'text-text-primary' : 'text-text-muted')}>{s.label}</span>
+            {i < STEPS.length - 1 && <div className="w-8 h-px bg-border-subtle mx-1" />}
           </div>
         ))}
       </div>
@@ -133,7 +133,7 @@ export default function NewWorkoutPlanPage() {
         {step === 2 && (
           <Card>
             <CardContent className="pt-6 space-y-4">
-              <p className="text-sm text-[#a1a1aa]">How do you want to use this plan?</p>
+              <p className="text-sm text-text-secondary">How do you want to use this plan?</p>
 
               <div className="space-y-2">
                 {([
@@ -148,18 +148,18 @@ export default function NewWorkoutPlanPage() {
                       'w-full flex items-start gap-4 rounded-lg border p-4 text-left transition-all',
                       planType === val
                         ? 'border-indigo-500 bg-indigo-500/8'
-                        : 'border-[#27272a] bg-[#111113] hover:border-[#3f3f46]'
+                        : 'border-border bg-surface hover:border-border-subtle'
                     )}
                   >
                     <div className={cn(
                       'h-4 w-4 rounded-full border-2 mt-0.5 flex-shrink-0 transition-colors',
-                      planType === val ? 'border-indigo-500 bg-indigo-500' : 'border-[#3f3f46]'
+                      planType === val ? 'border-indigo-500 bg-indigo-500' : 'border-border-subtle'
                     )}>
                       {planType === val && <div className="h-full w-full rounded-full bg-white scale-50" />}
                     </div>
                     <div>
-                      <p className={cn('text-sm font-medium', planType === val ? 'text-[#fafafa]' : 'text-[#a1a1aa]')}>{title}</p>
-                      <p className="text-xs text-[#52525b] mt-0.5">{desc}</p>
+                      <p className={cn('text-sm font-medium', planType === val ? 'text-text-primary' : 'text-text-secondary')}>{title}</p>
+                      <p className="text-xs text-text-muted mt-0.5">{desc}</p>
                     </div>
                   </button>
                 ))}
@@ -168,7 +168,7 @@ export default function NewWorkoutPlanPage() {
               {planType === 'assigned' && (
                 <FormField label="Select Client" error={errors.client_id?.message}>
                   {activeClients.length === 0 ? (
-                    <p className="text-xs text-[#71717a] p-3 rounded-md bg-[#1a1a1f] border border-[#27272a]">
+                    <p className="text-xs text-text-tertiary p-3 rounded-md bg-surface border border-border">
                       No active clients found. <Link href="/clients/new" className="text-indigo-400">Add a client first.</Link>
                     </p>
                   ) : (
@@ -199,9 +199,9 @@ export default function NewWorkoutPlanPage() {
         {step === 3 && (
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm font-medium text-[#a1a1aa] mb-4">Review your plan before creating</p>
+              <p className="text-sm font-medium text-text-secondary mb-4">Review your plan before creating</p>
 
-              <div className="space-y-3 rounded-lg bg-[#0d0d10] border border-[#1a1a1f] p-4">
+              <div className="space-y-3 rounded-lg bg-surface-alt border border-border-subtle p-4">
                 {[
                   { label: 'Name', value: watch('name') },
                   { label: 'Type', value: planType === 'template' ? 'Reusable Template' : 'Assigned to Client' },
@@ -210,13 +210,13 @@ export default function NewWorkoutPlanPage() {
                   { label: 'Duration', value: watch('duration_weeks') ? `${watch('duration_weeks')} weeks` : 'Not set' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-start justify-between gap-4">
-                    <span className="text-xs text-[#52525b] w-24 flex-shrink-0">{label}</span>
-                    <span className="text-xs text-[#fafafa] capitalize text-right">{value}</span>
+                    <span className="text-xs text-text-muted w-24 flex-shrink-0">{label}</span>
+                    <span className="text-xs text-text-primary capitalize text-right">{value}</span>
                   </div>
                 ))}
               </div>
 
-              <p className="text-xs text-[#52525b] mt-4">
+              <p className="text-xs text-text-muted mt-4">
                 After creating, you&apos;ll be taken to the plan editor to add exercises day by day.
               </p>
 

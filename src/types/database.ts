@@ -173,3 +173,20 @@ export interface Note {
   created_at: string
   updated_at: string
 }
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export interface NutritionLog {
+  id: string
+  client_id: string
+  logged_by: string
+  log_date: string
+  meal_type: MealType
+  food_name: string
+  calories: number | null
+  protein_g: number | null
+  carbs_g: number | null
+  fat_g: number | null
+  notes: string | null
+  created_at: string
+}

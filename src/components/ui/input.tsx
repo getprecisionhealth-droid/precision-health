@@ -13,7 +13,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          'flex h-9 w-full rounded-md border border-[#27272a] bg-[#1a1a1f] px-3 py-1 text-sm text-[#fafafa] placeholder:text-[#52525b] transition-colors',
+          'flex h-9 w-full rounded-md border border-border bg-surface-2 px-3 py-1 text-sm text-text-primary placeholder:text-text-muted transition-colors',
           'focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500',
           'disabled:cursor-not-allowed disabled:opacity-50',
           error && 'border-red-500 focus:ring-red-500',
@@ -37,7 +37,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <textarea
         className={cn(
-          'flex min-h-[80px] w-full rounded-md border border-[#27272a] bg-[#1a1a1f] px-3 py-2 text-sm text-[#fafafa] placeholder:text-[#52525b] transition-colors resize-none',
+          'flex min-h-[80px] w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-muted transition-colors resize-none',
           'focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500',
           'disabled:cursor-not-allowed disabled:opacity-50',
           error && 'border-red-500 focus:ring-red-500',
@@ -58,7 +58,7 @@ const Label = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <LabelPrimitive.Root
     ref={ref}
-    className={cn('text-sm font-medium text-[#a1a1aa] leading-none select-none', className)}
+    className={cn('text-sm font-medium text-text-secondary leading-none select-none', className)}
     {...props}
   />
 ))
@@ -79,7 +79,7 @@ function FormField({ label, error, hint, children, className }: FormFieldProps) 
       {label && <Label>{label}</Label>}
       {children}
       {error && <p className="text-xs text-red-400">{error}</p>}
-      {hint && !error && <p className="text-xs text-[#71717a]">{hint}</p>}
+      {hint && !error && <p className="text-xs text-text-tertiary">{hint}</p>}
     </div>
   )
 }
@@ -95,7 +95,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <select
         className={cn(
-          'flex h-9 w-full rounded-md border border-[#27272a] bg-[#1a1a1f] px-3 py-1 text-sm text-[#fafafa] transition-colors',
+          'flex h-9 w-full rounded-md border border-border bg-surface-2 px-3 py-1 text-sm text-text-primary transition-colors',
           'focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500',
           'disabled:cursor-not-allowed disabled:opacity-50',
           error && 'border-red-500',

@@ -8,7 +8,7 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     <div
       ref={ref}
       className={cn(
-        'rounded-lg border border-[#27272a] bg-[#111113] text-[#fafafa]',
+        'rounded-lg border border-border bg-surface text-text-primary',
         className
       )}
       {...props}
@@ -26,14 +26,14 @@ CardHeader.displayName = 'CardHeader'
 
 const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
-    <h3 ref={ref} className={cn('text-sm font-semibold text-[#fafafa] leading-none', className)} {...props} />
+    <h3 ref={ref} className={cn('text-sm font-semibold text-text-primary leading-none', className)} {...props} />
   )
 )
 CardTitle.displayName = 'CardTitle'
 
 const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => (
-    <p ref={ref} className={cn('text-xs text-[#71717a]', className)} {...props} />
+    <p ref={ref} className={cn('text-xs text-text-tertiary', className)} {...props} />
   )
 )
 CardDescription.displayName = 'CardDescription'
@@ -59,12 +59,12 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 function Badge({ className, variant = 'default', ...props }: BadgeProps) {
   const variants = {
-    default: 'bg-[#1a1a1f] text-[#a1a1aa] border-[#27272a]',
+    default: 'bg-surface-2 text-text-secondary border-border',
     success: 'bg-green-500/10 text-green-400 border-green-500/20',
     warning: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
     danger: 'bg-red-500/10 text-red-400 border-red-500/20',
     info: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-    outline: 'bg-transparent text-[#a1a1aa] border-[#27272a]',
+    outline: 'bg-transparent text-text-secondary border-border',
   }
 
   return (
@@ -119,7 +119,7 @@ function Separator({ className, orientation = 'horizontal', ...props }: React.HT
   return (
     <div
       className={cn(
-        'shrink-0 bg-[#27272a]',
+        'shrink-0 bg-border',
         orientation === 'horizontal' ? 'h-px w-full' : 'h-full w-px',
         className
       )}
@@ -132,7 +132,7 @@ function Separator({ className, orientation = 'horizontal', ...props }: React.HT
 function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('animate-pulse rounded-md bg-[#1a1a1f]', className)}
+      className={cn('animate-pulse rounded-md bg-surface-2', className)}
       {...props}
     />
   )
@@ -149,7 +149,7 @@ function Progress({ value, max = 100, color, className, ...props }: ProgressProp
   const pct = Math.min(Math.max((value / max) * 100, 0), 100)
   return (
     <div
-      className={cn('relative h-1.5 w-full overflow-hidden rounded-full bg-[#27272a]', className)}
+      className={cn('relative h-1.5 w-full overflow-hidden rounded-full bg-border', className)}
       {...props}
     >
       <div

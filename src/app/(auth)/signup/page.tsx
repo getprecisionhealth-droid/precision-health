@@ -41,15 +41,17 @@ export default function SignupPage() {
       },
     })
     if (error) { setServerError(error.message); return }
-    router.push('/dashboard')
+    // Route to the correct dashboard based on role
+    const dest = data.role === 'client' ? '/client-dashboard' : '/dashboard'
+    router.push(dest)
     router.refresh()
   }
 
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-[#fafafa]">Create your account</h2>
-        <p className="mt-1.5 text-sm text-[#71717a]">Start managing your clients in minutes</p>
+        <h2 className="text-2xl font-bold text-text-primary">Create your account</h2>
+        <p className="mt-1.5 text-sm text-text-tertiary">Start managing your clients in minutes</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -65,17 +67,17 @@ export default function SignupPage() {
                 className={cn(
                   'flex items-center gap-3 rounded-lg border p-3.5 text-left transition-all',
                   role === val
-                    ? 'border-indigo-500 bg-indigo-500/10 text-[#fafafa]'
-                    : 'border-[#27272a] bg-[#111113] text-[#71717a] hover:border-[#3f3f46]'
+                    ? 'border-indigo-500 bg-indigo-500/10 text-text-primary'
+                    : 'border-border bg-surface text-text-tertiary hover:border-text-faint'
                 )}
               >
                 <div className={cn('h-8 w-8 rounded-md flex items-center justify-center flex-shrink-0',
-                  role === val ? 'bg-indigo-600' : 'bg-[#1a1a1f]')}>
+                  role === val ? 'bg-indigo-600' : 'bg-surface-2')}>
                   <Dumbbell className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <p className={cn('text-sm font-medium', role === val ? 'text-[#fafafa]' : 'text-[#a1a1aa]')}>{title}</p>
-                  <p className="text-xs text-[#52525b] mt-0.5">{desc}</p>
+                  <p className={cn('text-sm font-medium', role === val ? 'text-text-primary' : 'text-text-secondary')}>{title}</p>
+                  <p className="text-xs text-text-muted mt-0.5">{desc}</p>
                 </div>
               </button>
             ))}
@@ -102,7 +104,7 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -130,7 +132,7 @@ export default function SignupPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-[#71717a]">
+      <p className="mt-6 text-center text-sm text-text-tertiary">
         Already have an account?{' '}
         <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
           Sign in

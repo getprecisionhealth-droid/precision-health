@@ -43,7 +43,7 @@ export default function ClientsPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#52525b]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted" />
           <Input
             placeholder="Search clients…"
             className="pl-9"
@@ -51,15 +51,15 @@ export default function ClientsPage() {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex gap-1 p-1 bg-[#111113] border border-[#27272a] rounded-lg">
+        <div className="flex gap-1 p-1 bg-surface border border-border rounded-lg">
           {STATUS_TABS.map(tab => (
             <button
               key={tab.value}
               onClick={() => setStatusFilter(tab.value)}
               className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
                 statusFilter === tab.value
-                  ? 'bg-[#1a1a1f] text-[#fafafa] border border-[#27272a]'
-                  : 'text-[#71717a] hover:text-[#a1a1aa]'
+                  ? 'bg-surface-2 text-text-primary border border-border'
+                  : 'text-text-tertiary hover:text-text-secondary'
               }`}
             >
               {tab.label}
@@ -77,12 +77,12 @@ export default function ClientsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
-          <Users className="h-10 w-10 text-[#27272a] mx-auto mb-4" />
-          <p className="text-sm font-medium text-[#71717a]">
+          <Users className="h-10 w-10 text-border mx-auto mb-4" />
+          <p className="text-sm font-medium text-text-tertiary">
             {search ? 'No clients match your search' : 'No clients yet'}
           </p>
           {!search && (
-            <p className="text-xs text-[#52525b] mt-1 mb-4">Add your first client to get started</p>
+            <p className="text-xs text-text-muted mt-1 mb-4">Add your first client to get started</p>
           )}
           {!search && <AddClientDialog />}
         </div>
@@ -90,7 +90,7 @@ export default function ClientsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((tc) => (
             <Link key={tc.id} href={`/clients/${tc.client_id}`}>
-              <Card className="hover:border-[#3f3f46] transition-colors cursor-pointer group">
+              <Card className="hover:border-text-faint transition-colors cursor-pointer group">
                 <CardContent className="pt-5">
                   <div className="flex items-start justify-between mb-4">
                     <UserAvatar name={tc.client?.full_name ?? 'Client'} src={tc.client?.avatar_url} size="md" />
@@ -98,14 +98,14 @@ export default function ClientsPage() {
                       {tc.status}
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-[#fafafa] truncate">{tc.client?.full_name}</p>
-                  <p className="text-xs text-[#52525b] truncate mt-0.5">{tc.client?.email}</p>
+                  <p className="text-sm font-semibold text-text-primary truncate">{tc.client?.full_name}</p>
+                  <p className="text-xs text-text-muted truncate mt-0.5">{tc.client?.email}</p>
                   {tc.goal_summary && (
-                    <p className="text-xs text-[#71717a] mt-2 line-clamp-2 leading-relaxed">{tc.goal_summary}</p>
+                    <p className="text-xs text-text-tertiary mt-2 line-clamp-2 leading-relaxed">{tc.goal_summary}</p>
                   )}
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#1a1a1f]">
-                    <span className="text-[10px] text-[#3f3f46]">Since {formatDate(tc.onboarding_date)}</span>
-                    <ArrowRight className="h-3.5 w-3.5 text-[#3f3f46] group-hover:text-indigo-400 transition-colors" />
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-subtle">
+                    <span className="text-[10px] text-text-faint">Since {formatDate(tc.onboarding_date)}</span>
+                    <ArrowRight className="h-3.5 w-3.5 text-text-faint group-hover:text-indigo-400 transition-colors" />
                   </div>
                 </CardContent>
               </Card>

@@ -4,15 +4,15 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-ring-offset',
   {
     variants: {
       variant: {
         default: 'bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700',
         destructive: 'bg-red-900/30 text-red-400 border border-red-800/50 hover:bg-red-900/50',
-        outline: 'border border-[#27272a] bg-transparent text-[#fafafa] hover:bg-[#1a1a1f] hover:border-[#3f3f46]',
-        secondary: 'bg-[#1a1a1f] text-[#fafafa] border border-[#27272a] hover:bg-[#27272a]',
-        ghost: 'text-[#a1a1aa] hover:bg-[#1a1a1f] hover:text-[#fafafa]',
+        outline: 'border border-border bg-transparent text-text-primary hover:bg-surface-2 hover:border-text-faint',
+        secondary: 'bg-surface-2 text-text-primary border border-border hover:bg-border',
+        ghost: 'text-text-secondary hover:bg-surface-2 hover:text-text-primary',
         link: 'text-indigo-400 underline-offset-4 hover:underline p-0 h-auto',
         success: 'bg-green-900/30 text-green-400 border border-green-800/50 hover:bg-green-900/50',
       },

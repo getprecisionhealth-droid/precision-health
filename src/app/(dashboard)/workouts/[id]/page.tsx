@@ -30,12 +30,12 @@ function ExerciseRow({ item, onRemove }: ExerciseRowProps) {
   const ex = item.exercise
 
   return (
-    <div className="rounded-lg border border-[#1a1a1f] bg-[#0d0d10] overflow-hidden">
+    <div className="rounded-lg border border-border-subtle bg-surface-alt overflow-hidden">
       <div className="flex items-center gap-3 p-3">
-        <GripVertical className="h-3.5 w-3.5 text-[#3f3f46] cursor-grab flex-shrink-0" />
+        <GripVertical className="h-3.5 w-3.5 text-text-faint cursor-grab flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-[#fafafa] truncate">{ex?.name}</p>
-          <div className="flex items-center gap-3 mt-0.5 text-[10px] text-[#52525b]">
+          <p className="text-sm font-medium text-text-primary truncate">{ex?.name}</p>
+          <div className="flex items-center gap-3 mt-0.5 text-[10px] text-text-muted">
             {item.sets && <span>{item.sets} sets</span>}
             {item.reps && <span>× {item.reps} reps</span>}
             {item.weight_kg && <span>@ {item.weight_kg}kg</span>}
@@ -45,13 +45,13 @@ function ExerciseRow({ item, onRemove }: ExerciseRowProps) {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="h-6 w-6 rounded flex items-center justify-center text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+            className="h-6 w-6 rounded flex items-center justify-center text-text-muted hover:text-text-secondary transition-colors"
           >
             {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
           <button
             onClick={onRemove}
-            className="h-6 w-6 rounded flex items-center justify-center text-[#52525b] hover:text-red-400 transition-colors"
+            className="h-6 w-6 rounded flex items-center justify-center text-text-muted hover:text-red-400 transition-colors"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -59,7 +59,7 @@ function ExerciseRow({ item, onRemove }: ExerciseRowProps) {
       </div>
 
       {expanded && (
-        <div className="px-3 pb-3 grid grid-cols-4 gap-2 border-t border-[#1a1a1f] pt-3">
+        <div className="px-3 pb-3 grid grid-cols-4 gap-2 border-t border-border-subtle pt-3">
           {[
             { label: 'Sets', value: item.sets },
             { label: 'Reps', value: item.reps },
@@ -67,14 +67,14 @@ function ExerciseRow({ item, onRemove }: ExerciseRowProps) {
             { label: 'Rest (sec)', value: item.rest_seconds },
           ].map(({ label, value }) => (
             <div key={label}>
-              <p className="text-[10px] text-[#52525b] mb-1">{label}</p>
-              <p className="text-xs text-[#a1a1aa]">{value ?? '—'}</p>
+              <p className="text-[10px] text-text-muted mb-1">{label}</p>
+              <p className="text-xs text-text-secondary">{value ?? '—'}</p>
             </div>
           ))}
           {item.notes && (
             <div className="col-span-4">
               <p className="text-[10px] text-[#52525b] mb-1">Notes</p>
-              <p className="text-xs text-[#71717a]">{item.notes}</p>
+              <p className="text-xs text-text-tertiary">{item.notes}</p>
             </div>
           )}
         </div>
@@ -118,7 +118,7 @@ function AddExerciseForm({ planId, exercise, onDone }: AddExerciseFormProps) {
 
   return (
     <div className="rounded-lg border border-indigo-500/30 bg-indigo-600/5 p-4 space-y-3">
-      <p className="text-sm font-medium text-[#fafafa]">Configure: {exercise.name}</p>
+      <p className="text-sm font-medium text-text-primary">Configure: {exercise.name}</p>
       <div className="grid grid-cols-2 gap-3">
         <FormField label="Day">
           <Select {...f('day_of_week')}>
@@ -186,7 +186,7 @@ export default function WorkoutPlanDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <Link href="/workouts" className="inline-flex items-center gap-1.5 text-xs text-[#71717a] hover:text-[#a1a1aa] mb-6 transition-colors">
+      <Link href="/workouts" className="inline-flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary mb-6 transition-colors">
         <ArrowLeft className="h-3.5 w-3.5" /> Back to plans
       </Link>
 
@@ -199,9 +199,9 @@ export default function WorkoutPlanDetailPage({ params }: { params: Promise<{ id
                 <Dumbbell className="h-5 w-5 text-indigo-400" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-[#fafafa]">{plan.name}</h1>
+                <h1 className="text-lg font-bold text-text-primary">{plan.name}</h1>
                 {plan.description && (
-                  <p className="text-xs text-[#71717a] mt-0.5 max-w-lg">{plan.description}</p>
+                  <p className="text-xs text-text-tertiary mt-0.5 max-w-lg">{plan.description}</p>
                 )}
                 <div className="flex items-center gap-3 mt-2">
                   {plan.difficulty && (
@@ -210,12 +210,12 @@ export default function WorkoutPlanDetailPage({ params }: { params: Promise<{ id
                     </span>
                   )}
                   {plan.duration_weeks && (
-                    <span className="flex items-center gap-1 text-xs text-[#52525b]">
+                    <span className="flex items-center gap-1 text-xs text-text-muted">
                       <Clock className="h-3 w-3" />{plan.duration_weeks} weeks
                     </span>
                   )}
                   {plan.client && (
-                    <span className="flex items-center gap-1 text-xs text-[#52525b]">
+                    <span className="flex items-center gap-1 text-xs text-text-muted">
                       <Users className="h-3 w-3" />
                       Assigned to {(plan.client as { full_name: string }).full_name}
                     </span>
@@ -259,7 +259,7 @@ export default function WorkoutPlanDetailPage({ params }: { params: Promise<{ id
                 >
                   <span>{day.slice(0, 3)}</span>
                   {count > 0 && (
-                    <span className={cn('text-[10px] mt-0.5 font-bold', selectedDay === dayNum ? 'text-indigo-400' : 'text-[#3f3f46]')}>
+                    <span className={cn('text-[10px] mt-0.5 font-bold', selectedDay === dayNum ? 'text-indigo-400' : 'text-text-faint')}>
                       {count}
                     </span>
                   )}
@@ -283,10 +283,10 @@ export default function WorkoutPlanDetailPage({ params }: { params: Promise<{ id
               )}
 
               {currentDayExercises.length === 0 && !pendingExercise ? (
-                <div className="text-center py-8 border border-dashed border-[#27272a] rounded-lg">
-                  <Dumbbell className="h-6 w-6 text-[#27272a] mx-auto mb-2" />
-                  <p className="text-xs text-[#52525b]">No exercises for {DAYS_OF_WEEK[selectedDay - 1]}</p>
-                  <p className="text-[10px] text-[#3f3f46] mt-0.5">
+                <div className="text-center py-8 border border-dashed border-border rounded-lg">
+                  <Dumbbell className="h-6 w-6 text-border mx-auto mb-2" />
+                  <p className="text-xs text-text-muted">No exercises for {DAYS_OF_WEEK[selectedDay - 1]}</p>
+                  <p className="text-[10px] text-text-faint mt-0.5">
                     {showPicker ? 'Click an exercise from the library →' : 'Click "Add Exercise" to get started'}
                   </p>
                 </div>

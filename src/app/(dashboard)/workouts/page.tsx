@@ -53,10 +53,10 @@ export default function WorkoutsPage() {
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] text-[#52525b] uppercase tracking-wider">{label}</p>
-                  <p className="text-2xl font-bold text-[#fafafa] mt-0.5">{value}</p>
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider">{label}</p>
+                  <p className="text-2xl font-bold text-text-primary mt-0.5">{value}</p>
                 </div>
-                <Icon className="h-5 w-5 text-[#27272a]" />
+                <Icon className="h-5 w-5 text-border" />
               </div>
             </CardContent>
           </Card>
@@ -66,18 +66,18 @@ export default function WorkoutsPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#52525b]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted" />
           <Input placeholder="Search plans…" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex gap-1 p-1 bg-[#111113] border border-[#27272a] rounded-lg">
+        <div className="flex gap-1 p-1 bg-surface border border-border rounded-lg">
           {(['all', 'template', 'assigned'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`px-3 py-1 text-xs rounded-md font-medium capitalize transition-colors ${
                 filter === f
-                  ? 'bg-[#1a1a1f] text-[#fafafa] border border-[#27272a]'
-                  : 'text-[#71717a] hover:text-[#a1a1aa]'
+                  ? 'bg-surface-2 text-text-primary border border-border'
+                  : 'text-text-tertiary hover:text-text-secondary'
               }`}
             >
               {f}
@@ -95,13 +95,13 @@ export default function WorkoutsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
-          <Dumbbell className="h-10 w-10 text-[#27272a] mx-auto mb-4" />
-          <p className="text-sm font-medium text-[#71717a]">
+          <Dumbbell className="h-10 w-10 text-border mx-auto mb-4" />
+          <p className="text-sm font-medium text-text-tertiary">
             {search ? 'No plans match your search' : 'No workout plans yet'}
           </p>
           {!search && (
             <>
-              <p className="text-xs text-[#52525b] mt-1 mb-4">Create your first plan or template</p>
+              <p className="text-xs text-text-muted mt-1 mb-4">Create your first plan or template</p>
               <Button asChild size="sm">
                 <Link href="/workouts/new"><Plus className="h-3.5 w-3.5" />Create Plan</Link>
               </Button>
@@ -112,7 +112,7 @@ export default function WorkoutsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(plan => (
             <Link key={plan.id} href={`/workouts/${plan.id}`}>
-              <Card className="hover:border-[#3f3f46] transition-colors cursor-pointer group h-full">
+              <Card className="hover:border-text-faint transition-colors cursor-pointer group h-full">
                 <CardContent className="pt-5 flex flex-col h-full">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="h-9 w-9 rounded-lg bg-indigo-600/15 flex items-center justify-center flex-shrink-0">
@@ -124,32 +124,32 @@ export default function WorkoutsPage() {
                           {plan.difficulty}
                         </span>
                       )}
-                      <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium bg-[#1a1a1f] text-[#71717a] border-[#27272a] capitalize">
+                      <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium bg-surface-2 text-text-tertiary border-border capitalize">
                         {plan.plan_type}
                       </span>
                     </div>
                   </div>
 
-                  <p className="text-sm font-semibold text-[#fafafa] leading-snug mb-1">{plan.name}</p>
+                  <p className="text-sm font-semibold text-text-primary leading-snug mb-1">{plan.name}</p>
                   {plan.description && (
-                    <p className="text-xs text-[#71717a] line-clamp-2 leading-relaxed mb-3">{plan.description}</p>
+                    <p className="text-xs text-text-tertiary line-clamp-2 leading-relaxed mb-3">{plan.description}</p>
                   )}
 
-                  <div className="mt-auto pt-3 border-t border-[#1a1a1f] flex items-center justify-between">
+                  <div className="mt-auto pt-3 border-t border-border-subtle flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {plan.duration_weeks && (
-                        <span className="flex items-center gap-1 text-[10px] text-[#52525b]">
+                        <span className="flex items-center gap-1 text-[10px] text-text-muted">
                           <Clock className="h-3 w-3" />{plan.duration_weeks}w
                         </span>
                       )}
                       {plan.client && (
-                        <span className="flex items-center gap-1 text-[10px] text-[#52525b]">
+                        <span className="flex items-center gap-1 text-[10px] text-text-muted">
                           <Users className="h-3 w-3" />
                           {(plan.client as { full_name: string }).full_name}
                         </span>
                       )}
                     </div>
-                    <ArrowRight className="h-3.5 w-3.5 text-[#3f3f46] group-hover:text-indigo-400 transition-colors" />
+                    <ArrowRight className="h-3.5 w-3.5 text-text-faint group-hover:text-indigo-400 transition-colors" />
                   </div>
                 </CardContent>
               </Card>

@@ -44,7 +44,7 @@ export function ExercisePicker({ onAdd, excludeIds = [] }: ExercisePickerProps) 
     <div className="flex flex-col h-full">
       {/* Search */}
       <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#52525b]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted" />
         <Input
           placeholder="Search exercises or muscles…"
           className="pl-9 h-8 text-xs"
@@ -63,7 +63,7 @@ export function ExercisePicker({ onAdd, excludeIds = [] }: ExercisePickerProps) 
               'px-2.5 py-1 rounded-full text-[10px] font-medium border capitalize transition-colors',
               categoryFilter === cat
                 ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30'
-                : 'bg-transparent text-[#52525b] border-[#27272a] hover:text-[#71717a]'
+                : 'bg-transparent text-text-muted border-border-subtle hover:text-text-tertiary'
             )}
           >
             {cat}
@@ -79,16 +79,16 @@ export function ExercisePicker({ onAdd, excludeIds = [] }: ExercisePickerProps) 
           ))
         ) : filtered.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-xs text-[#52525b]">No exercises found</p>
+            <p className="text-xs text-text-muted">No exercises found</p>
           </div>
         ) : (
           filtered.map(ex => (
             <div
               key={ex.id}
-              className="flex items-center gap-3 rounded-md p-2.5 hover:bg-[#1a1a1f] group transition-colors"
+              className="flex items-center gap-3 rounded-md p-2.5 hover:bg-surface-2 group transition-colors"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-[#fafafa] truncate">{ex.name}</p>
+                <p className="text-xs font-medium text-text-primary truncate">{ex.name}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   {ex.category && (
                     <span className={cn(
@@ -99,7 +99,7 @@ export function ExercisePicker({ onAdd, excludeIds = [] }: ExercisePickerProps) 
                     </span>
                   )}
                   {ex.muscle_groups?.slice(0, 2).map(m => (
-                    <span key={m} className="text-[9px] text-[#3f3f46] capitalize">{m.replace('_', ' ')}</span>
+                    <span key={m} className="text-[9px] text-text-faint capitalize">{m.replace('_', ' ')}</span>
                   ))}
                 </div>
               </div>
@@ -114,7 +114,7 @@ export function ExercisePicker({ onAdd, excludeIds = [] }: ExercisePickerProps) 
         )}
       </div>
 
-      <p className="text-[10px] text-[#3f3f46] mt-3 text-center">
+      <p className="text-[10px] text-text-faint mt-3 text-center">
         {filtered.length} exercise{filtered.length !== 1 ? 's' : ''} available
       </p>
     </div>

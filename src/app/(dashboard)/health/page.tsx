@@ -24,8 +24,8 @@ function ClientHealthCard({ tc }: { tc: { client_id: string; client?: { full_nam
           <div className="flex items-center gap-3">
             <UserAvatar name={client.full_name} src={client.avatar_url} size="sm" />
             <div>
-              <p className="text-sm font-semibold text-[#fafafa]">{client.full_name}</p>
-              <p className="text-xs text-[#52525b]">
+              <p className="text-sm font-semibold text-text-primary">{client.full_name}</p>
+              <p className="text-xs text-text-muted">
                 {latest ? `Last logged ${formatDate(latest.metric_date)}` : 'No data yet'}
               </p>
             </div>
@@ -53,17 +53,17 @@ function ClientHealthCard({ tc }: { tc: { client_id: string; client?: { full_nam
                 { label: 'Sleep', value: latest?.sleep_hours ? `${latest.sleep_hours}h` : '—' },
                 { label: 'Energy', value: latest?.energy_level ? `${latest.energy_level}/10` : '—' },
               ].map(({ label, value }) => (
-                <div key={label} className="text-center p-2 rounded-md bg-[#0d0d10] border border-[#1a1a1f]">
-                  <p className="text-[9px] text-[#52525b] uppercase tracking-wide">{label}</p>
-                  <p className="text-sm font-bold text-[#fafafa] mt-0.5">{value}</p>
+                <div key={label} className="text-center p-2 rounded-md bg-surface-alt border border-border-subtle">
+                  <p className="text-[9px] text-text-muted uppercase tracking-wide">{label}</p>
+                  <p className="text-sm font-bold text-text-primary mt-0.5">{value}</p>
                 </div>
               ))}
             </div>
             <HealthChart metrics={metrics} metric="weight_kg" label="Weight" color="#6366f1" />
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-24 border border-dashed border-[#27272a] rounded-lg">
-            <p className="text-xs text-[#52525b]">No metrics logged</p>
+          <div className="flex flex-col items-center justify-center h-24 border border-dashed border-border rounded-lg">
+            <p className="text-xs text-text-muted">No metrics logged</p>
           </div>
         )}
       </CardContent>
@@ -90,9 +90,9 @@ export default function HealthPage() {
         </div>
       ) : activeClients.length === 0 ? (
         <div className="text-center py-20">
-          <Users className="h-10 w-10 text-[#27272a] mx-auto mb-4" />
-          <p className="text-sm text-[#71717a]">No active clients to show metrics for</p>
-          <p className="text-xs text-[#52525b] mt-1">Add clients from the Clients page first</p>
+          <Users className="h-10 w-10 text-border mx-auto mb-4" />
+          <p className="text-sm text-text-tertiary">No active clients to show metrics for</p>
+          <p className="text-xs text-text-muted mt-1">Add clients from the Clients page first</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -81,8 +81,8 @@ export default function SettingsPage() {
 
   if (isLoading) return (
     <div className="p-8 max-w-2xl mx-auto animate-pulse space-y-4">
-      <div className="h-6 bg-[#1a1a1f] rounded w-32" />
-      <div className="h-48 bg-[#1a1a1f] rounded-xl" />
+      <div className="h-6 bg-surface-2 rounded w-32" />
+      <div className="h-48 bg-surface-2 rounded-xl" />
     </div>
   )
 
@@ -99,12 +99,12 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Avatar section */}
-            <div className="flex items-center gap-4 pb-4 border-b border-[#1a1a1f]">
+            <div className="flex items-center gap-4 pb-4 border-b border-border-subtle">
               <UserAvatar name={profile?.full_name ?? 'T'} src={profile?.avatar_url} size="lg" />
               <div>
-                <p className="text-sm font-medium text-[#fafafa]">{profile?.full_name}</p>
-                <p className="text-xs text-[#52525b]">{profile?.email}</p>
-                <p className="text-xs text-[#3f3f46] mt-1 capitalize">{profile?.role}</p>
+                <p className="text-sm font-medium text-text-primary">{profile?.full_name}</p>
+                <p className="text-xs text-text-muted">{profile?.email}</p>
+                <p className="text-xs text-text-faint mt-1 capitalize">{profile?.role}</p>
               </div>
             </div>
 
@@ -146,7 +146,7 @@ export default function SettingsPage() {
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     certs.includes(cert)
                       ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/40'
-                      : 'bg-transparent text-[#71717a] border-[#27272a] hover:border-[#3f3f46]'
+                      : 'bg-transparent text-text-tertiary border-border hover:border-text-faint'
                   }`}
                 >
                   {certs.includes(cert) && <Check className="inline h-2.5 w-2.5 mr-1" />}
@@ -199,7 +199,7 @@ export default function SettingsPage() {
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     specs.includes(spec)
                       ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/40'
-                      : 'bg-transparent text-[#71717a] border-[#27272a] hover:border-[#3f3f46]'
+                      : 'bg-transparent text-text-tertiary border-border hover:border-text-faint'
                   }`}
                 >
                   {specs.includes(spec) && <Check className="inline h-2.5 w-2.5 mr-1" />}
