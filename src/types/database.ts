@@ -223,3 +223,24 @@ export interface NutritionPlanMeal {
   sort_order: number | null
   created_at: string
 }
+
+export type EventType = 'workout' | 'nutrition' | 'video_call' | 'other'
+export type EventStatus = 'pending' | 'scheduled' | 'completed' | 'cancelled'
+
+export interface CalendarEvent {
+  id: string
+  trainer_id: string
+  client_id: string
+  event_type: EventType
+  title: string
+  description: string | null
+  start_time: string
+  end_time: string
+  status: EventStatus
+  meeting_link: string | null
+  created_at: string
+  updated_at: string
+  // Joined
+  client?: Profile
+  trainer?: Profile
+}

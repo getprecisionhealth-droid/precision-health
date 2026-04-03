@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Dumbbell, Apple, Activity,
-  Target, Settings, LogOut, ChevronRight
+  Target, Settings, LogOut, ChevronRight, Calendar as CalendarIcon
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: '/client-dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/my-workouts', icon: Dumbbell, label: 'My Workouts' },
   { href: '/nutrition', icon: Apple, label: 'Nutrition Log' },
+  { href: '/calendar', icon: CalendarIcon, label: 'Schedule & Booking' },
   { href: '/my-health', icon: Activity, label: 'Health Metrics' },
   { href: '/my-goals', icon: Target, label: 'My Goals' },
 ]

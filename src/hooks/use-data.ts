@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, TrainerClient, HealthMetric, WorkoutPlan, Goal, Exercise, NutritionLog, NutritionPlan } from '@/types/database'
+import type { Profile, TrainerClient, HealthMetric, WorkoutPlan, Goal, Exercise, NutritionLog, NutritionPlan, CalendarEvent } from '@/types/database'
 
 // ─── Keys ─────────────────────────────────────────────────────────────────────
 export const KEYS = {
@@ -17,6 +17,7 @@ export const KEYS = {
   exercises: ['exercises'] as const,
   goals: (clientId: string) => ['goals', clientId] as const,
   dashboardStats: ['dashboard-stats'] as const,
+  calendarEvents: (id?: string) => ['calendar-events', id || 'all'] as const,
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
@@ -648,5 +649,81 @@ export function useDeleteNutritionPlanMeal() {
       if (error) throw error
     },
     onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: KEYS.nutritionPlan(vars.plan_id) }),
+  })
+}
+
+// ─── Calendar Events ─────────────────────────────────────────────────────────
+
+export function useCalendarEvents(clientId?: string) {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.calendarEvents(clientId),
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      
+      let query = supabase
+        .from('calendar_events')
+        .select(`*, client:profiles!calendar_events_client_id_fkey(*), trainer:profiles!calendar_events_trainer_id_fkey(*)`)
+        .order('start_time', { ascending: true })
+
+      if (profile?.role === 'trainer') {
+        query = query.eq('trainer_id', user.id)
+        if (clientId) query = query.eq('client_id', clientId)
+      } else {
+        query = query.eq('client_id', user.id)
+      }
+
+      const { data, error } = await query
+      if (error) throw error
+      return data as CalendarEvent[]
+    },
+  })
+}
+
+export function useCreateCalendarEvent() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (event: Omit<CalendarEvent, 'id' | 'created_at' | 'updated_at' | 'client' | 'trainer'>) => {
+      const { data, error } = await supabase.from('calendar_events').insert([event]).select().single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: KEYS.calendarEvents() })
+      qc.invalidateQueries({ queryKey: KEYS.calendarEvents(vars.client_id) })
+    },
+  })
+}
+
+export function useUpdateCalendarEvent() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CalendarEvent> }) => {
+      const { data, error } = await supabase.from('calendar_events').update(updates).eq('id', id).select().single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: KEYS.calendarEvents() })
+    },
+  })
+}
+
+export function useDeleteCalendarEvent() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('calendar_events').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.calendarEvents() })
+    },
   })
 }

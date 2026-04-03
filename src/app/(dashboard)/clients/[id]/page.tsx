@@ -2,7 +2,7 @@
 
 import { use, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Activity, Target, Dumbbell, StickyNote, Calendar, Mail, Phone, Apple, Coffee, Sun, Moon, Cookie, Trash2 } from 'lucide-react'
+import { ArrowLeft, Activity, Target, Dumbbell, StickyNote, Calendar, Mail, Phone, Apple, Coffee, Sun, Moon, Cookie, Trash2, MessageCircle } from 'lucide-react'
 import { useClient, useHealthMetrics, useGoals, useNutritionLogs, useNutritionPlans, useDeleteNutritionPlan, useWorkoutPlans, useDeleteWorkoutPlan } from '@/hooks/use-data'
 import { Card, CardContent, CardHeader, CardTitle, UserAvatar, Badge, Skeleton, Progress } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -89,9 +89,19 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                   <Mail className="h-3 w-3" />{client.email}
                 </span>
                 {client.phone && (
-                  <span className="flex items-center gap-1.5 text-xs text-text-tertiary">
-                    <Phone className="h-3 w-3" />{client.phone}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5 text-xs text-text-tertiary border-r border-border-subtle pr-2">
+                      <Phone className="h-3 w-3" />{client.phone}
+                    </span>
+                    <a 
+                      href={`https://wa.me/${client.phone.replace(/\D/g, '')}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-500 hover:text-emerald-400 transition-colors"
+                    >
+                      <MessageCircle className="h-3 w-3" /> Start Chat
+                    </a>
+                  </div>
                 )}
                 <span className="flex items-center gap-1.5 text-xs text-text-tertiary">
                   <Calendar className="h-3 w-3" />Since {formatDate(tc?.onboarding_date ?? '')}
