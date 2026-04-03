@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Users, Dumbbell, TrendingUp, Plus, ArrowRight, Activity } from 'lucide-react'
+import { Users, Dumbbell, TrendingUp, Plus, ArrowRight, Activity, Apple } from 'lucide-react'
 import { useClients, useDashboardStats, useWorkoutPlans } from '@/hooks/use-data'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, UserAvatar, Badge, Skeleton } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -183,6 +183,7 @@ export default function DashboardPage() {
               {[
                 { href: '/clients/new', icon: Users, label: 'Add new client' },
                 { href: '/workouts/new', icon: Dumbbell, label: 'Create workout plan' },
+                { href: '/nutrition-plans/new', icon: Apple, label: 'Create diet plan' },
                 { href: '/health', icon: Activity, label: 'Log health metrics' },
               ].map(({ href, icon: Icon, label }) => (
                 <Button key={href} variant="ghost" className="w-full justify-start gap-3 h-9" asChild>
