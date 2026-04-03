@@ -1,10 +1,11 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Dumbbell, Apple, Activity,
-  Target, Settings, LogOut, ChevronRight, Calendar as CalendarIcon
+  Target, Settings, LogOut, ChevronRight, Calendar as CalendarIcon, Menu, X
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -29,7 +30,12 @@ interface ClientSidebarProps {
 export function ClientSidebar({ profile }: ClientSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const [mobileOpen, setMobileOpen] = useState(false)
   useRealtimeSync()
+
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -38,8 +44,8 @@ export function ClientSidebar({ profile }: ClientSidebarProps) {
     router.refresh()
   }
 
-  return (
-    <aside className="flex h-screen w-[220px] flex-shrink-0 flex-col border-r border-border-subtle bg-surface-alt">
+  const SidebarContent = (
+    <div className="flex h-full w-[240px] md:w-[220px] flex-shrink-0 flex-col bg-surface-alt border-r border-border-subtle">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border-subtle">
         <div className="h-7 w-7 rounded-lg bg-emerald-600 flex items-center justify-center flex-shrink-0">
@@ -110,6 +116,46 @@ export function ClientSidebar({ profile }: ClientSidebarProps) {
           </button>
         </div>
       </div>
-    </aside>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Mobile Topbar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border-subtle z-40 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded-md bg-emerald-600 flex items-center justify-center flex-shrink-0">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1L14 4.5V11.5L8 15L2 11.5V4.5L8 1Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+              <circle cx="8" cy="8" r="2.5" fill="white"/>
+            </svg>
+          </div>
+          <span className="text-sm font-semibold text-text-primary tracking-tight">Precision Health</span>
+        </div>
+        <button onClick={() => setMobileOpen(true)} className="p-1.5 text-text-secondary hover:text-text-primary bg-surface-alt rounded-md border border-border-subtle">
+          <Menu className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex h-screen z-30">
+        {SidebarContent}
+      </aside>
+
+      {/* Mobile Drawer Overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-y-0 left-0 shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+            {SidebarContent}
+            <button 
+              onClick={() => setMobileOpen(false)} 
+              className="absolute top-4 right-4 p-1.5 rounded-md text-text-muted hover:text-text-primary bg-surface-2 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
