@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
 
   // Public routes
   const publicRoutes = ['/login', '/signup', '/invite', '/']
-  const isPublicRoute = publicRoutes.includes(pathname)
+  const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/api/auth')
 
   // Redirect unauthenticated users to login
   if (!user && !isPublicRoute) {
