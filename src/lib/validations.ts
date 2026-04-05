@@ -13,7 +13,7 @@ export const signupSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirm_password: z.string(),
-  role: z.enum(['trainer', 'client']).default('trainer'),
+  role: z.enum(['admin', 'admin_trainer', 'trainer', 'client']).default('admin'),
 }).refine(d => d.password === d.confirm_password, {
   message: "Passwords don't match",
   path: ['confirm_password'],
@@ -74,6 +74,7 @@ export const workoutPlanExerciseSchema = z.object({
   reps: z.string().optional(),
   weight_kg: z.coerce.number().optional(),
   rest_seconds: z.coerce.number().optional(),
+  rpe: z.coerce.number().min(1).max(10).optional(),
   notes: z.string().optional(),
 })
 
@@ -88,6 +89,55 @@ export const goalSchema = z.object({
   target_date: z.string().optional(),
 })
 
+export const inviteSchema = z.object({
+  email: z.string().email('Valid email required'),
+  role: z.enum(['trainer', 'client']),
+})
+
+export const exerciseSchema = z.object({
+  name: z.string().min(2, 'Exercise name is required'),
+  description: z.string().max(500).optional(),
+  category: z.enum(['strength', 'cardio', 'flexibility', 'balance', 'plyometrics', 'sports', 'other']).optional(),
+  muscle_groups: z.array(z.string()).optional(),
+  equipment: z.array(z.string()).optional(),
+  instructions: z.string().max(2000).optional(),
+})
+
+const mealIngredientSchema = z.object({
+  name: z.string().min(1, 'Ingredient name required'),
+  portion: z.string().optional(),
+  calories: z.coerce.number().optional(),
+  protein_g: z.coerce.number().optional(),
+  carbs_g: z.coerce.number().optional(),
+  fat_g: z.coerce.number().optional(),
+})
+
+const mealOptionSchema = z.object({
+  label: z.string().min(1, 'Option label required'),
+  ingredients: z.array(mealIngredientSchema).min(1, 'At least one ingredient required'),
+})
+
+const mealBlockSchema = z.object({
+  name: z.string().min(1, 'Block name required'),
+  options: z.array(mealOptionSchema).min(1, 'At least one option required'),
+})
+
+export const nutritionPlanV2Schema = z.object({
+  title: z.string().min(2, 'Plan title is required'),
+  description: z.string().max(500).optional(),
+  client_id: z.string().uuid(),
+  goal: z.string().optional(),
+  priorities: z.array(z.string()).optional(),
+  restrictions: z.array(z.string()).optional(),
+  target_calories: z.coerce.number().optional(),
+  calories_maintenance: z.coerce.number().optional(),
+  target_protein_g: z.coerce.number().optional(),
+  target_carbs_g: z.coerce.number().optional(),
+  target_fat_g: z.coerce.number().optional(),
+  target_fiber_g: z.coerce.number().optional(),
+  meal_blocks: z.array(mealBlockSchema).optional(),
+})
+
 export type LoginInput = z.infer<typeof loginSchema>
 export type SignupInput = z.infer<typeof signupSchema>
 export type ProfileInput = z.infer<typeof profileSchema>
@@ -96,3 +146,6 @@ export type HealthMetricInput = z.infer<typeof healthMetricSchema>
 export type WorkoutPlanInput = z.infer<typeof workoutPlanSchema>
 export type WorkoutPlanExerciseInput = z.infer<typeof workoutPlanExerciseSchema>
 export type GoalInput = z.infer<typeof goalSchema>
+export type InviteInput = z.infer<typeof inviteSchema>
+export type ExerciseInput = z.infer<typeof exerciseSchema>
+export type NutritionPlanV2Input = z.infer<typeof nutritionPlanV2Schema>

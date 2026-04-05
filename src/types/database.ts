@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-export type UserRole = 'trainer' | 'client'
+export type UserRole = 'admin' | 'admin_trainer' | 'trainer' | 'client'
 export type ClientStatus = 'active' | 'inactive' | 'pending' | 'archived'
 export type GoalStatus = 'active' | 'achieved' | 'paused' | 'cancelled'
 export type GoalCategory = 'weight_loss' | 'muscle_gain' | 'endurance' | 'flexibility' | 'nutrition' | 'lifestyle' | 'custom'
@@ -8,6 +8,31 @@ export type GoalTimeframe = 'short' | 'medium' | 'long'
 export type ExerciseCategory = 'strength' | 'cardio' | 'flexibility' | 'balance' | 'plyometrics' | 'sports' | 'other'
 export type NoteCategory = 'general' | 'session' | 'nutrition' | 'progress' | 'medical' | 'goal'
 
+// ─── Organization ─────────────────────────────────────────────────────────────
+export interface Organization {
+  id: string
+  name: string
+  owner_id: string
+  created_at: string
+}
+
+// ─── Invitation ───────────────────────────────────────────────────────────────
+export interface Invitation {
+  id: string
+  organization_id: string
+  email: string
+  role: 'trainer' | 'client'
+  invited_by: string
+  token: string
+  accepted_at: string | null
+  expires_at: string
+  created_at: string
+  // Joined
+  organization?: Organization
+  inviter?: Profile
+}
+
+// ─── Profile ──────────────────────────────────────────────────────────────────
 export interface Profile {
   id: string
   role: UserRole
@@ -22,15 +47,18 @@ export interface Profile {
   specializations: string[] | null
   years_experience: number | null
   height_cm: number | null
+  organization_id: string | null
   is_active: boolean
   created_at: string
   updated_at: string
 }
 
+// ─── Trainer-Client Link ──────────────────────────────────────────────────────
 export interface TrainerClient {
   id: string
   trainer_id: string
   client_id: string
+  organization_id: string | null
   status: ClientStatus
   goal_summary: string | null
   onboarding_date: string
@@ -42,6 +70,20 @@ export interface TrainerClient {
   trainer?: Profile
 }
 
+// ─── Trainer-Client Assignment (Admin team management) ────────────────────────
+export interface TrainerClientAssignment {
+  id: string
+  organization_id: string
+  trainer_id: string
+  client_id: string
+  assigned_by: string
+  created_at: string
+  // Joined
+  trainer?: Profile
+  client?: Profile
+}
+
+// ─── Exercise ─────────────────────────────────────────────────────────────────
 export interface Exercise {
   id: string
   created_by: string | null
@@ -56,6 +98,7 @@ export interface Exercise {
   created_at: string
 }
 
+// ─── Workout Plan ─────────────────────────────────────────────────────────────
 export interface WorkoutPlan {
   id: string
   trainer_id: string
@@ -84,12 +127,14 @@ export interface WorkoutPlanExercise {
   weight_kg: number | null
   rest_seconds: number | null
   duration_secs: number | null
+  rpe: number | null
   notes: string | null
   created_at: string
   // Joined
   exercise?: Exercise
 }
 
+// ─── Workout Log ──────────────────────────────────────────────────────────────
 export interface WorkoutLog {
   id: string
   client_id: string
@@ -122,6 +167,7 @@ export interface WorkoutLogSet {
   exercise?: Exercise
 }
 
+// ─── Health Metric ────────────────────────────────────────────────────────────
 export interface HealthMetric {
   id: string
   client_id: string
@@ -144,6 +190,7 @@ export interface HealthMetric {
   created_at: string
 }
 
+// ─── Goal ─────────────────────────────────────────────────────────────────────
 export interface Goal {
   id: string
   client_id: string
@@ -162,6 +209,7 @@ export interface Goal {
   updated_at: string
 }
 
+// ─── Note ─────────────────────────────────────────────────────────────────────
 export interface Note {
   id: string
   trainer_id: string
@@ -174,6 +222,7 @@ export interface Note {
   updated_at: string
 }
 
+// ─── Nutrition ────────────────────────────────────────────────────────────────
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 
 export interface NutritionLog {
@@ -197,10 +246,15 @@ export interface NutritionPlan {
   client_id: string
   title: string
   description: string | null
+  goal: string | null
+  priorities: string[] | null
+  restrictions: string[] | null
   target_calories: number | null
+  calories_maintenance: number | null
   target_protein_g: number | null
   target_carbs_g: number | null
   target_fat_g: number | null
+  target_fiber_g: number | null
   is_active: boolean
   created_at: string
   updated_at: string
@@ -209,21 +263,45 @@ export interface NutritionPlan {
   client?: Profile
 }
 
+export interface MealIngredient {
+  name: string
+  portion: string | null
+  calories: number | null
+  protein_g: number | null
+  carbs_g: number | null
+  fat_g: number | null
+}
+
 export interface NutritionPlanMeal {
   id: string
   plan_id: string
   meal_type: MealType
+  meal_block: string | null
+  option_label: string | null
   food_name: string
   portion: string | null
   calories: number | null
   protein_g: number | null
   carbs_g: number | null
   fat_g: number | null
+  ingredients: MealIngredient[] | null
   notes: string | null
   sort_order: number | null
   created_at: string
 }
 
+export interface ClientMealSelection {
+  id: string
+  client_id: string
+  plan_id: string
+  meal_id: string
+  selected_date: string
+  created_at: string
+  // Joined
+  meal?: NutritionPlanMeal
+}
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
 export type EventType = 'workout' | 'nutrition' | 'video_call' | 'other'
 export type EventStatus = 'pending' | 'scheduled' | 'completed' | 'cancelled'
 

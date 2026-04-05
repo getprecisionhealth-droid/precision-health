@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes
-  const publicRoutes = ['/login', '/signup', '/client-login', '/client-signup', '/']
+  const publicRoutes = ['/login', '/signup', '/invite', '/']
   const isPublicRoute = publicRoutes.includes(pathname)
 
   // Redirect unauthenticated users to login
@@ -37,34 +37,43 @@ export async function middleware(request: NextRequest) {
 
   // For authenticated users: role-based routing
   if (user) {
-    // Determine role from user metadata (fast, no extra DB call)
-    const role = (user.user_metadata?.role as string) ?? 'trainer'
+    const role = (user.user_metadata?.role as string) ?? 'admin_trainer'
 
-    const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/client-login' || pathname === '/client-signup'
-    const trainerRoutes = ['/dashboard', '/clients', '/workouts', '/health', '/goals', '/notes', '/settings']
-    const clientRoutes = ['/client-dashboard', '/my-workouts', '/nutrition', '/my-health', '/my-goals', '/client-settings']
+    const isAuthPage = ['/login', '/signup', '/invite'].includes(pathname)
 
+    // Route groups
+    const adminRoutes = ['/dashboard', '/clients', '/workouts', '/health', '/goals', '/notes', '/settings', '/calendar', '/nutrition-plans', '/team', '/exercise-library']
+    const trainerRoutes = ['/trainer-dashboard', '/clients', '/workouts', '/health', '/goals', '/notes', '/settings', '/calendar', '/nutrition-plans', '/exercise-library']
+    const clientRoutes = ['/client-dashboard', '/my-workouts', '/nutrition', '/my-health', '/my-goals', '/client-settings', '/my-calendar']
+
+    const isAdminRoute = adminRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
     const isTrainerRoute = trainerRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
     const isClientRoute = clientRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
 
     // Redirect from auth pages to correct dashboard
     if (isAuthPage) {
-      const dest = role === 'client' ? '/client-dashboard' : '/dashboard'
-      return NextResponse.redirect(new URL(dest, request.url))
+      if (role === 'client') return NextResponse.redirect(new URL('/client-dashboard', request.url))
+      if (role === 'trainer') return NextResponse.redirect(new URL('/trainer-dashboard', request.url))
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
     // Redirect root to correct dashboard
     if (pathname === '/') {
-      const dest = role === 'client' ? '/client-dashboard' : '/dashboard'
-      return NextResponse.redirect(new URL(dest, request.url))
+      if (role === 'client') return NextResponse.redirect(new URL('/client-dashboard', request.url))
+      if (role === 'trainer') return NextResponse.redirect(new URL('/trainer-dashboard', request.url))
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
     // Block cross-role access
-    if (role === 'client' && isTrainerRoute) {
+    if (role === 'client' && (isAdminRoute || pathname === '/trainer-dashboard')) {
       return NextResponse.redirect(new URL('/client-dashboard', request.url))
     }
     if (role === 'trainer' && isClientRoute) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      return NextResponse.redirect(new URL('/trainer-dashboard', request.url))
+    }
+    // Trainers cannot access admin-only routes
+    if (role === 'trainer' && (pathname === '/team' || pathname.startsWith('/team/'))) {
+      return NextResponse.redirect(new URL('/trainer-dashboard', request.url))
     }
   }
 

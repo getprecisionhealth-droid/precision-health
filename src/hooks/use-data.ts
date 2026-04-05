@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, TrainerClient, HealthMetric, WorkoutPlan, Goal, Exercise, NutritionLog, NutritionPlan, CalendarEvent } from '@/types/database'
+import type { Profile, TrainerClient, HealthMetric, WorkoutPlan, Goal, Exercise, NutritionLog, NutritionPlan, CalendarEvent, Organization, Invitation, TrainerClientAssignment, ClientMealSelection } from '@/types/database'
 
 // ─── Keys ─────────────────────────────────────────────────────────────────────
 export const KEYS = {
@@ -18,6 +18,13 @@ export const KEYS = {
   goals: (clientId: string) => ['goals', clientId] as const,
   dashboardStats: ['dashboard-stats'] as const,
   calendarEvents: (id?: string) => ['calendar-events', id || 'all'] as const,
+  organization: ['organization'] as const,
+  orgTrainers: ['org-trainers'] as const,
+  orgClients: ['org-clients'] as const,
+  invitations: ['invitations'] as const,
+  trainerAssignments: ['trainer-assignments'] as const,
+  trainerClients: ['trainer-clients'] as const,
+  mealSelections: (planId: string, date: string) => ['meal-selections', planId, date] as const,
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
@@ -36,7 +43,166 @@ export function useProfile() {
   })
 }
 
-// ─── Clients ──────────────────────────────────────────────────────────────────
+// ─── Organization ─────────────────────────────────────────────────────────────
+export function useOrganization() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.organization,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+      if (!profile?.organization_id) return null
+      const { data, error } = await supabase.from('organizations').select('*').eq('id', profile.organization_id).single()
+      if (error) return null
+      return data as Organization
+    },
+  })
+}
+
+export function useOrganizationTrainers() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.orgTrainers,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+      if (!profile?.organization_id) return []
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('organization_id', profile.organization_id)
+        .in('role', ['trainer', 'admin_trainer'])
+        .order('full_name')
+      if (error) throw error
+      return data as Profile[]
+    },
+  })
+}
+
+export function useOrganizationClients() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.orgClients,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+      if (!profile?.organization_id) return []
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('organization_id', profile.organization_id)
+        .eq('role', 'client')
+        .order('full_name')
+      if (error) throw error
+      return data as Profile[]
+    },
+  })
+}
+
+// ─── Invitations ──────────────────────────────────────────────────────────────
+export function useInvitations() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.invitations,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+      if (!profile?.organization_id) return []
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('organization_id', profile.organization_id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as Invitation[]
+    },
+  })
+}
+
+export function useSendInvite() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { email: string; role: 'trainer' | 'client' }) => {
+      const { sendInviteAction } = await import('@/app/actions/invite-actions')
+      const result = await sendInviteAction(input)
+      if (result.error) throw new Error(result.error)
+      return result
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.invitations })
+    },
+  })
+}
+
+// ─── Trainer Assignments ──────────────────────────────────────────────────────
+export function useTrainerAssignments() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.trainerAssignments,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+      if (!profile?.organization_id) return []
+      const { data, error } = await supabase
+        .from('trainer_client_assignments')
+        .select('*, trainer:profiles!trainer_client_assignments_trainer_id_fkey(*), client:profiles!trainer_client_assignments_client_id_fkey(*)')
+        .eq('organization_id', profile.organization_id)
+      if (error) throw error
+      return data as TrainerClientAssignment[]
+    },
+  })
+}
+
+export function useAssignTrainerToClient() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { trainer_id: string; client_id: string }) => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+      if (!profile?.organization_id) throw new Error('No organization')
+      const { error } = await supabase.from('trainer_client_assignments').insert({
+        organization_id: profile.organization_id,
+        trainer_id: input.trainer_id,
+        client_id: input.client_id,
+        assigned_by: user.id,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.trainerAssignments })
+      qc.invalidateQueries({ queryKey: KEYS.trainerClients })
+    },
+  })
+}
+
+// ─── Trainer's Assigned Clients (for trainer role) ─────────────────────────────
+export function useTrainerClients() {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.trainerClients,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('trainer_clients')
+        .select(`*, client:profiles!trainer_clients_client_id_fkey(*)`)
+        .eq('trainer_id', user.id)
+        .neq('status', 'archived')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as TrainerClient[]
+    },
+  })
+}
+
+// ─── Clients (role-aware) ─────────────────────────────────────────────────────
 export function useClients() {
   const supabase = createClient()
   return useQuery({
@@ -44,6 +210,23 @@ export function useClients() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
+
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      const role = profile?.role ?? 'admin_trainer'
+
+      if (role === 'trainer') {
+        // Trainer: only assigned clients
+        const { data, error } = await supabase
+          .from('trainer_clients')
+          .select(`*, client:profiles!trainer_clients_client_id_fkey(*)`)
+          .eq('trainer_id', user.id)
+          .neq('status', 'archived')
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        return data as TrainerClient[]
+      }
+
+      // Admin/Admin-Trainer: all their linked clients
       const { data, error } = await supabase
         .from('trainer_clients')
         .select(`*, client:profiles!trainer_clients_client_id_fkey(*)`)
@@ -80,13 +263,15 @@ export function useAddClient() {
       full_name: string; email: string; phone?: string;
       date_of_birth?: string; gender?: string; height_cm?: number; goal_summary?: string
     }) => {
-      // Use secure server action (bypasses RLS with service role key)
       const { addClientAction } = await import('@/app/actions/client-actions')
       const result = await addClientAction(input)
       if (result.error) throw new Error(result.error)
       return result.clientId!
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.clients }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.clients })
+      qc.invalidateQueries({ queryKey: KEYS.orgClients })
+    },
   })
 }
 
@@ -132,7 +317,6 @@ export function useLogHealthMetric() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Clean empty strings to null
       const cleaned = Object.fromEntries(
         Object.entries(input).map(([k, v]) => [k, v === '' ? null : v])
       )
@@ -227,7 +411,7 @@ export function useAddExerciseToPlan() {
     mutationFn: async (input: {
       plan_id: string; exercise_id: string; day_of_week?: number;
       order_index?: number; sets?: number; reps?: string;
-      weight_kg?: number; rest_seconds?: number; notes?: string
+      weight_kg?: number; rest_seconds?: number; rpe?: number; notes?: string
     }) => {
       const { data, error } = await supabase
         .from('workout_plan_exercises').insert(input).select().single()
@@ -311,6 +495,8 @@ export function useDashboardStats() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
+      const { data: profile } = await supabase.from('profiles').select('role, organization_id').eq('id', user.id).single()
+
       const [clientsRes, plansRes] = await Promise.all([
         supabase.from('trainer_clients').select('status, created_at').eq('trainer_id', user.id),
         supabase.from('workout_plans').select('id').eq('trainer_id', user.id),
@@ -324,11 +510,23 @@ export function useDashboardStats() {
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
       }).length
 
+      // For admins, also count trainers in org
+      let totalTrainers = 0
+      if (profile?.organization_id && ['admin', 'admin_trainer'].includes(profile.role)) {
+        const { data: trainers } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('organization_id', profile.organization_id)
+          .in('role', ['trainer', 'admin_trainer'])
+        totalTrainers = trainers?.length ?? 0
+      }
+
       return {
         totalClients: clients.length,
         activeClients: active,
         newClientsThisMonth: thisMonth,
         totalPlans: plansRes.data?.length ?? 0,
+        totalTrainers,
       }
     },
   })
@@ -338,7 +536,6 @@ export function useDashboardStats() {
 // CLIENT-SPECIFIC HOOKS
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ─── My Trainer ───────────────────────────────────────────────────────────
 export function useMyTrainer() {
   const supabase = createClient()
   return useQuery({
@@ -358,7 +555,6 @@ export function useMyTrainer() {
   })
 }
 
-// ─── My Workout Plans ─────────────────────────────────────────────────────
 export function useMyWorkoutPlans() {
   const supabase = createClient()
   return useQuery({
@@ -378,7 +574,6 @@ export function useMyWorkoutPlans() {
   })
 }
 
-// ─── My Goals ─────────────────────────────────────────────────────────────
 export function useMyGoals() {
   const supabase = createClient()
   return useQuery({
@@ -396,7 +591,6 @@ export function useMyGoals() {
   })
 }
 
-// ─── My Health Metrics ────────────────────────────────────────────────────
 export function useMyHealthMetrics() {
   const supabase = createClient()
   return useQuery({
@@ -590,7 +784,10 @@ export function useCreateNutritionPlan() {
   return useMutation({
     mutationFn: async (input: {
       title: string; description?: string; client_id: string;
-      target_calories?: number; target_protein_g?: number; target_carbs_g?: number; target_fat_g?: number
+      goal?: string; priorities?: string[]; restrictions?: string[];
+      target_calories?: number; calories_maintenance?: number;
+      target_protein_g?: number; target_carbs_g?: number; target_fat_g?: number;
+      target_fiber_g?: number;
     }) => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
@@ -614,6 +811,7 @@ export function useAddNutritionPlanMeal() {
   return useMutation({
     mutationFn: async (input: {
       plan_id: string; meal_type: string; food_name: string; portion?: string;
+      meal_block?: string; option_label?: string; ingredients?: string;
       calories?: number; protein_g?: number; carbs_g?: number; fat_g?: number; sort_order?: number;
     }) => {
       const { data, error } = await supabase
@@ -652,6 +850,61 @@ export function useDeleteNutritionPlanMeal() {
   })
 }
 
+// ─── Client Meal Selections ──────────────────────────────────────────────────
+export function useClientMealSelections(planId?: string, date?: string) {
+  const supabase = createClient()
+  return useQuery({
+    queryKey: KEYS.mealSelections(planId ?? '', date ?? ''),
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('client_meal_selections')
+        .select('*')
+        .eq('client_id', user.id)
+        .eq('plan_id', planId!)
+        .eq('selected_date', date!)
+      if (error) throw error
+      return data as ClientMealSelection[]
+    },
+    enabled: !!planId && !!date,
+  })
+}
+
+export function useSelectMeal() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { plan_id: string; meal_id: string; selected_date: string }) => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('client_meal_selections')
+        .insert({ client_id: user.id, ...input })
+        .select().single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: KEYS.mealSelections(vars.plan_id, vars.selected_date) })
+    },
+  })
+}
+
+export function useDeselectMeal() {
+  const supabase = createClient()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id }: { id: string; plan_id: string; date: string }) => {
+      const { error } = await supabase.from('client_meal_selections').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: KEYS.mealSelections(vars.plan_id, vars.date) })
+    },
+  })
+}
+
 // ─── Calendar Events ─────────────────────────────────────────────────────────
 
 export function useCalendarEvents(clientId?: string) {
@@ -669,11 +922,11 @@ export function useCalendarEvents(clientId?: string) {
         .select(`*, client:profiles!calendar_events_client_id_fkey(*), trainer:profiles!calendar_events_trainer_id_fkey(*)`)
         .order('start_time', { ascending: true })
 
-      if (profile?.role === 'trainer') {
+      if (profile?.role === 'client') {
+        query = query.eq('client_id', user.id)
+      } else {
         query = query.eq('trainer_id', user.id)
         if (clientId) query = query.eq('client_id', clientId)
-      } else {
-        query = query.eq('client_id', user.id)
       }
 
       const { data, error } = await query
@@ -708,7 +961,7 @@ export function useUpdateCalendarEvent() {
       if (error) throw error
       return data
     },
-    onSuccess: (_, vars) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.calendarEvents() })
     },
   })

@@ -21,12 +21,20 @@ export async function addClientAction(input: AddClientInput) {
     return { error: 'Not authenticated' }
   }
 
-  // 2. Use admin client to create an auth user first (profiles.id FK → auth.users.id)
+  // 2. Get caller's profile for org context
   const admin = createAdminClient()
+  const { data: callerProfile } = await admin
+    .from('profiles')
+    .select('organization_id, role')
+    .eq('id', user.id)
+    .single()
 
+  const organizationId = callerProfile?.organization_id ?? null
+
+  // 3. Use admin client to create an auth user first (profiles.id FK → auth.users.id)
   const { data: newUser, error: authCreateError } = await admin.auth.admin.createUser({
     email: input.email,
-    password: crypto.randomUUID(), // placeholder password — client can reset later
+    password: crypto.randomUUID(), // placeholder password — client can reset or use Google OAuth
     email_confirm: true,
     user_metadata: { full_name: input.full_name, role: 'client' },
   })
@@ -48,6 +56,7 @@ export async function addClientAction(input: AddClientInput) {
     date_of_birth: input.date_of_birth ?? null,
     gender: input.gender ?? null,
     height_cm: input.height_cm ?? null,
+    organization_id: organizationId,
     is_active: true,
   }, { onConflict: 'id' })
 
@@ -58,10 +67,11 @@ export async function addClientAction(input: AddClientInput) {
     return { error: profileError.message }
   }
 
-  // 3. Link trainer → client
+  // 4. Link trainer → client (with organization context)
   const { error: linkError } = await admin.from('trainer_clients').insert({
     trainer_id: user.id,
     client_id: clientId,
+    organization_id: organizationId,
     status: 'active',
     goal_summary: input.goal_summary ?? null,
   })
@@ -71,6 +81,16 @@ export async function addClientAction(input: AddClientInput) {
     // Rollback – remove orphaned profile
     await admin.from('profiles').delete().eq('id', clientId)
     return { error: linkError.message }
+  }
+
+  // 5. If caller is admin_trainer (solo), auto-assign themselves as the trainer
+  if (callerProfile?.role === 'admin_trainer' && organizationId) {
+    await admin.from('trainer_client_assignments').insert({
+      organization_id: organizationId,
+      trainer_id: user.id,
+      client_id: clientId,
+      assigned_by: user.id,
+    })
   }
 
   return { clientId }

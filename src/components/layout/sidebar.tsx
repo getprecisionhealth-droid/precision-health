@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, Dumbbell, Activity,
-  Target, StickyNote, Settings, LogOut, ChevronRight, Apple, Calendar as CalendarIcon, Menu, X
+  Target, StickyNote, Settings, LogOut, ChevronRight, Apple, Calendar as CalendarIcon, Menu, X, UserPlus, Library
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -14,16 +14,32 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { useRealtimeSync } from '@/hooks/use-realtime'
 import type { Profile } from '@/types/database'
 
-const NAV_ITEMS = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/clients', icon: Users, label: 'Clients' },
-  { href: '/workouts', icon: Dumbbell, label: 'Workouts' },
-  { href: '/calendar', icon: CalendarIcon, label: 'Calendar' },
-  { href: '/nutrition-plans/new', icon: Apple, label: 'Diet Plans' },
-  { href: '/health', icon: Activity, label: 'Health Metrics' },
-  { href: '/goals', icon: Target, label: 'Goals' },
-  { href: '/notes', icon: StickyNote, label: 'Notes' },
-]
+function getNavItems(role: string) {
+  const base = [
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/clients', icon: Users, label: 'Clients' },
+    { href: '/workouts', icon: Dumbbell, label: 'Workouts' },
+    { href: '/calendar', icon: CalendarIcon, label: 'Calendar' },
+    { href: '/nutrition-plans/new', icon: Apple, label: 'Diet Plans' },
+    { href: '/exercise-library', icon: Library, label: 'Exercise Library' },
+    { href: '/health', icon: Activity, label: 'Health Metrics' },
+    { href: '/goals', icon: Target, label: 'Goals' },
+    { href: '/notes', icon: StickyNote, label: 'Notes' },
+  ]
+
+  if (role === 'admin' || role === 'admin_trainer') {
+    // Insert Team after Clients
+    const clientsIdx = base.findIndex(i => i.href === '/clients')
+    base.splice(clientsIdx + 1, 0, { href: '/team', icon: UserPlus, label: 'Team' })
+  }
+
+  if (role === 'trainer') {
+    // Replace dashboard href for trainers
+    base[0] = { href: '/trainer-dashboard', icon: LayoutDashboard, label: 'Dashboard' }
+  }
+
+  return base
+}
 
 interface SidebarProps {
   profile: Profile | null
@@ -35,6 +51,8 @@ export function Sidebar({ profile }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   useRealtimeSync()
 
+  const navItems = getNavItems(profile?.role ?? 'admin_trainer')
+
   useEffect(() => {
     setMobileOpen(false)
   }, [pathname])
@@ -45,6 +63,11 @@ export function Sidebar({ profile }: SidebarProps) {
     router.push('/login')
     router.refresh()
   }
+
+  const roleLabel = profile?.role === 'admin' ? 'Admin'
+    : profile?.role === 'admin_trainer' ? 'Admin · Trainer'
+    : profile?.role === 'trainer' ? 'Trainer'
+    : 'User'
 
   const SidebarContent = (
     <div className="flex h-full w-[240px] md:w-[220px] flex-shrink-0 flex-col bg-surface-alt border-r border-border-subtle">
@@ -62,8 +85,8 @@ export function Sidebar({ profile }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3">
         <div className="space-y-0.5">
-          {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
-            const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+          {navItems.map(({ href, icon: Icon, label }) => {
+            const isActive = pathname === href || (href !== '/dashboard' && href !== '/trainer-dashboard' && pathname.startsWith(href))
             return (
               <Link
                 key={href}
@@ -104,10 +127,10 @@ export function Sidebar({ profile }: SidebarProps) {
       <div className="border-t border-border-subtle p-3">
         <ThemeToggle className="w-full justify-start mb-2" />
         <div className="flex items-center gap-3 rounded-md px-2 py-2">
-          <UserAvatar name={profile?.full_name ?? 'Trainer'} src={profile?.avatar_url} size="sm" />
+          <UserAvatar name={profile?.full_name ?? 'User'} src={profile?.avatar_url} size="sm" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-text-primary truncate">{profile?.full_name ?? 'Trainer'}</p>
-            <p className="text-[10px] text-text-muted truncate capitalize">{profile?.role}</p>
+            <p className="text-xs font-medium text-text-primary truncate">{profile?.full_name ?? 'User'}</p>
+            <p className="text-[10px] text-text-muted truncate">{roleLabel}</p>
           </div>
           <button
             onClick={handleSignOut}

@@ -5,17 +5,24 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, ArrowRight, Dumbbell } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, Building2, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { signupSchema, type SignupInput } from '@/lib/validations'
 import { Button } from '@/components/ui/button'
-import { Input, Label, FormField } from '@/components/ui/input'
+import { Input, FormField } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+
+type BusinessType = null | 'agency' | 'solo'
 
 export default function SignupPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [step, setStep] = useState<'form' | 'business_type'>('form')
+  const [businessType, setBusinessType] = useState<BusinessType>(null)
+  const [formData, setFormData] = useState<SignupInput | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
 
   const {
     register,
@@ -23,49 +30,153 @@ export default function SignupPage() {
     formState: { errors, isSubmitting },
   } = useForm<SignupInput>({
     resolver: zodResolver(signupSchema) as never,
-    defaultValues: { role: 'trainer' },
+    defaultValues: { role: 'admin' },
   })
 
   async function onSubmit(data: SignupInput) {
     setServerError(null)
+    setFormData(data)
+    setStep('business_type')
+  }
+
+  async function handleBusinessTypeSelect(type: BusinessType) {
+    if (!formData || !type) return
+    setBusinessType(type)
+    setIsCreating(true)
+    setServerError(null)
+
+    const role = type === 'agency' ? 'admin' : 'admin_trainer'
     const supabase = createClient()
+
     const { error, data: authData } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
+      email: formData.email,
+      password: formData.password,
       options: {
-        data: { full_name: data.full_name, role: 'trainer' },
+        data: { full_name: formData.full_name, role },
       },
     })
-    if (error) { 
-      // Handle the case where they need to confirm their email
+
+    if (error) {
       if (error.message.includes('Email not confirmed')) {
         setServerError('Please check your email to verify your account.')
       } else {
         setServerError(error.message)
       }
-      return 
-    }
-    
-    // Check if email confirmation is required (which may leave us without a session)
-    if (authData.user && !authData.session) {
-      setServerError('Account created! Please check your email for a verification link.')
+      setIsCreating(false)
       return
     }
 
+    if (authData.user && !authData.session) {
+      setServerError('Account created! Please check your email for a verification link.')
+      setIsCreating(false)
+      return
+    }
+
+    // Create organization
+    if (authData.user) {
+      const orgName = type === 'agency'
+        ? `${formData.full_name}'s Agency`
+        : `${formData.full_name}'s Practice`
+
+      const { createOrganizationAction } = await import('@/app/actions/org-actions')
+      const result = await createOrganizationAction({ name: orgName })
+      if (result.error) {
+        console.error('Org creation error:', result.error)
+      }
+    }
+
+    setIsCreating(false)
     router.push('/dashboard')
     router.refresh()
+  }
+
+  if (step === 'business_type') {
+    return (
+      <div>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-text-primary">Set Up Your Business</h2>
+          <p className="mt-1.5 text-sm text-text-tertiary">How do you operate?</p>
+        </div>
+
+        <div className="space-y-3">
+          <button
+            onClick={() => handleBusinessTypeSelect('agency')}
+            disabled={isCreating}
+            className={cn(
+              'w-full text-left p-4 rounded-xl border transition-all group',
+              businessType === 'agency'
+                ? 'border-indigo-500 bg-indigo-600/10'
+                : 'border-border-subtle hover:border-indigo-500/50 hover:bg-surface-2'
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 rounded-lg bg-indigo-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Building2 className="h-4 w-4 text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-text-primary">I manage a team of trainers</p>
+                <p className="text-xs text-text-muted mt-0.5">
+                  You&apos;ll have a full admin dashboard to invite trainers, assign clients, and oversee everything.
+                </p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleBusinessTypeSelect('solo')}
+            disabled={isCreating}
+            className={cn(
+              'w-full text-left p-4 rounded-xl border transition-all group',
+              businessType === 'solo'
+                ? 'border-indigo-500 bg-indigo-600/10'
+                : 'border-border-subtle hover:border-indigo-500/50 hover:bg-surface-2'
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <User className="h-4 w-4 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-text-primary">I&apos;m an independent coach</p>
+                <p className="text-xs text-text-muted mt-0.5">
+                  You&apos;ll manage your own clients directly — no extra trainers needed.
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {isCreating && (
+          <div className="mt-4 text-center">
+            <p className="text-sm text-text-tertiary">Setting up your account…</p>
+          </div>
+        )}
+
+        {serverError && (
+          <div className="mt-4 rounded-md bg-red-500/10 border border-red-500/20 px-3 py-2.5">
+            <p className="text-sm text-red-400">{serverError}</p>
+          </div>
+        )}
+
+        <button
+          onClick={() => { setStep('form'); setServerError(null) }}
+          className="mt-6 text-xs text-text-muted hover:text-text-secondary transition-colors"
+        >
+          ← Back to signup form
+        </button>
+      </div>
+    )
   }
 
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-text-primary">Trainer Sign Up</h2>
-        <p className="mt-1.5 text-sm text-text-tertiary">Start managing your clients in minutes</p>
+        <h2 className="text-2xl font-bold text-text-primary">Create Your Account</h2>
+        <p className="mt-1.5 text-sm text-text-tertiary">Start managing your fitness business</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Hidden role field since we force 'trainer' */}
-        <input type="hidden" {...register('role')} value="trainer" />
+        <input type="hidden" {...register('role')} value="admin" />
 
         <FormField label="Full name" error={errors.full_name?.message}>
           <Input placeholder="Alex Johnson" autoComplete="name" {...register('full_name')} />
@@ -110,8 +221,8 @@ export default function SignupPage() {
         )}
 
         <Button type="submit" className="w-full mt-2" size="lg" loading={isSubmitting}>
-          {!isSubmitting && <><span>Create account</span><ArrowRight className="h-4 w-4" /></>}
-          {isSubmitting && 'Creating account…'}
+          {!isSubmitting && <><span>Continue</span><ArrowRight className="h-4 w-4" /></>}
+          {isSubmitting && 'Processing…'}
         </Button>
       </form>
 
@@ -121,13 +232,6 @@ export default function SignupPage() {
           Sign in
         </Link>
       </p>
-
-      <div className="mt-8 pt-6 border-t border-border-subtle text-center">
-         <p className="text-xs text-text-muted">
-           Are you a Client?{' '}
-           <Link href="/client-signup" className="text-emerald-500 hover:underline">Client Signup</Link>
-         </p>
-      </div>
     </div>
   )
 }

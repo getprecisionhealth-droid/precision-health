@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { Users, Dumbbell, TrendingUp, Plus, ArrowRight, Activity, Apple, UserPlus } from 'lucide-react'
-import { useClients, useDashboardStats, useWorkoutPlans } from '@/hooks/use-data'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, UserAvatar, Badge, Skeleton } from '@/components/ui/card'
+import { Users, Dumbbell, TrendingUp, Plus, ArrowRight, Activity, Apple } from 'lucide-react'
+import { useTrainerClients, useDashboardStats, useWorkoutPlans, useProfile } from '@/hooks/use-data'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, UserAvatar, Skeleton } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/page-header'
-import { STATUS_COLORS, formatDate, formatRelativeTime } from '@/lib/utils'
+import { STATUS_COLORS, formatRelativeTime } from '@/lib/utils'
 
 function StatCard({ label, value, sub, icon: Icon, accent = false }:
   { label: string; value: string | number; sub?: string; icon: React.ElementType; accent?: boolean }) {
@@ -28,55 +28,45 @@ function StatCard({ label, value, sub, icon: Icon, accent = false }:
   )
 }
 
-export default function DashboardPage() {
-  const { data: stats, isLoading: statsLoading } = useDashboardStats()
-  const { data: clients, isLoading: clientsLoading } = useClients()
+export default function TrainerDashboardPage() {
+  const { data: profile } = useProfile()
+  const { data: clients, isLoading: clientsLoading } = useTrainerClients()
   const { data: plans } = useWorkoutPlans()
 
-  const recentClients = clients?.slice(0, 6) ?? []
+  const assignedClients = clients ?? []
+  const recentClients = assignedClients.slice(0, 6)
+  const activeCount = assignedClients.filter(c => c.status === 'active').length
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <PageHeader
-        title="Dashboard"
-        description="Your coaching overview at a glance"
-        actions={
-          <div className="flex gap-2">
-            <Button asChild size="sm" variant="outline">
-              <Link href="/team"><UserPlus className="h-3.5 w-3.5" />Team</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link href="/clients/new"><Plus className="h-3.5 w-3.5" />Add Client</Link>
-            </Button>
-          </div>
-        }
+        title={`Welcome, ${profile?.full_name?.split(' ')[0] ?? 'Trainer'}`}
+        description="Your assigned clients and coaching overview"
       />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statsLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}><CardContent className="pt-5"><Skeleton className="h-16 w-full" /></CardContent></Card>
-          ))
-        ) : (
-          <>
-            <StatCard label="Active Clients" value={stats?.activeClients ?? 0} sub="currently training" icon={Users} accent />
-            <StatCard label="Total Clients" value={stats?.totalClients ?? 0} sub="all time" icon={Users} />
-            <StatCard label="Workout Plans" value={stats?.totalPlans ?? 0} sub="created" icon={Dumbbell} />
-            <StatCard label="Trainers" value={stats?.totalTrainers ?? 0} sub="in your team" icon={UserPlus} />
-          </>
-        )}
+        <StatCard label="Assigned Clients" value={assignedClients.length} sub="total assigned" icon={Users} accent />
+        <StatCard label="Active Clients" value={activeCount} sub="currently training" icon={Users} />
+        <StatCard label="Workout Plans" value={plans?.length ?? 0} sub="created" icon={Dumbbell} />
+        <StatCard label="This Month" value={
+          assignedClients.filter(c => {
+            const d = new Date(c.created_at)
+            const now = new Date()
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+          }).length
+        } sub="new assignments" icon={TrendingUp} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Clients */}
+        {/* My Clients */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between pb-4">
                 <div>
-                  <CardTitle>Recent Clients</CardTitle>
-                  <CardDescription className="mt-0.5">Your latest added clients</CardDescription>
+                  <CardTitle>My Clients</CardTitle>
+                  <CardDescription className="mt-0.5">Clients assigned to you</CardDescription>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/clients" className="text-xs text-indigo-400 hover:text-indigo-300">
@@ -98,10 +88,8 @@ export default function DashboardPage() {
               ) : recentClients.length === 0 ? (
                 <div className="text-center py-10">
                   <Users className="h-8 w-8 text-border mx-auto mb-3" />
-                  <p className="text-sm text-text-muted">No clients yet</p>
-                  <Button asChild size="sm" className="mt-3">
-                    <Link href="/clients/new">Add your first client</Link>
-                  </Button>
+                  <p className="text-sm text-text-muted">No clients assigned yet</p>
+                  <p className="text-xs text-text-faint mt-1">Your admin will assign clients to you</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border-subtle">
@@ -120,7 +108,6 @@ export default function DashboardPage() {
                         <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[tc.status]}`}>
                           {tc.status}
                         </span>
-                        <span className="text-[10px] text-text-faint">{formatRelativeTime(tc.created_at)}</span>
                       </div>
                     </Link>
                   ))}
@@ -130,67 +117,18 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Recent Plans */}
+        {/* Quick Actions */}
         <div>
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between pb-4">
-                <div>
-                  <CardTitle>Workout Plans</CardTitle>
-                  <CardDescription className="mt-0.5">Recently created</CardDescription>
-                </div>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/workouts" className="text-xs text-indigo-400">
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {!plans || plans.length === 0 ? (
-                <div className="text-center py-8">
-                  <Dumbbell className="h-7 w-7 text-border mx-auto mb-2" />
-                  <p className="text-xs text-text-muted mb-3">No plans yet</p>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href="/workouts/new">Create plan</Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {plans.slice(0, 5).map((plan) => (
-                    <Link
-                      key={plan.id}
-                      href={`/workouts/${plan.id}`}
-                      className="flex items-center gap-3 p-2.5 rounded-md hover:bg-surface-2 transition-colors group"
-                    >
-                      <div className="h-7 w-7 rounded bg-indigo-600/15 flex items-center justify-center flex-shrink-0">
-                        <Dumbbell className="h-3.5 w-3.5 text-indigo-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-text-primary truncate">{plan.name}</p>
-                        <p className="text-[10px] text-text-muted">
-                          {plan.client ? `→ ${(plan.client as {full_name: string}).full_name}` : 'Template'}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Quick actions */}
-          <Card className="mt-4">
             <CardHeader>
               <CardTitle className="pb-3">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-2">
               {[
-                { href: '/clients/new', icon: Users, label: 'Add new client' },
-                { href: '/team', icon: UserPlus, label: 'Manage team' },
                 { href: '/workouts/new', icon: Dumbbell, label: 'Create workout plan' },
                 { href: '/nutrition-plans/new', icon: Apple, label: 'Create diet plan' },
                 { href: '/health', icon: Activity, label: 'Log health metrics' },
+                { href: '/calendar', icon: Activity, label: 'View calendar' },
               ].map(({ href, icon: Icon, label }) => (
                 <Button key={href} variant="ghost" className="w-full justify-start gap-3 h-9" asChild>
                   <Link href={href}>
