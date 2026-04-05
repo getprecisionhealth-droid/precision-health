@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { Users, Dumbbell, TrendingUp, Plus, ArrowRight, Activity, Apple, UserPlus } from 'lucide-react'
-import { useClients, useDashboardStats, useWorkoutPlans } from '@/hooks/use-data'
+import { useClients, useDashboardStats, useWorkoutPlans, useProfile } from '@/hooks/use-data'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, UserAvatar, Badge, Skeleton } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/page-header'
 import { STATUS_COLORS, formatDate, formatRelativeTime } from '@/lib/utils'
+import { BusinessSetup } from '@/components/auth/business-setup'
 
 function StatCard({ label, value, sub, icon: Icon, accent = false }:
   { label: string; value: string | number; sub?: string; icon: React.ElementType; accent?: boolean }) {
@@ -29,9 +30,23 @@ function StatCard({ label, value, sub, icon: Icon, accent = false }:
 }
 
 export default function DashboardPage() {
+  const { data: profile, isLoading: profileLoading } = useProfile()
   const { data: stats, isLoading: statsLoading } = useDashboardStats()
   const { data: clients, isLoading: clientsLoading } = useClients()
   const { data: plans } = useWorkoutPlans()
+
+  if (profileLoading) {
+    return <div className="p-8 flex justify-center"><div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" /></div>
+  }
+
+  // If new admin bypassing signup using Google auth, force business setup
+  if (profile && !profile.organization_id) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-background flex flex-col justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <BusinessSetup profileName={profile.full_name} />
+      </div>
+    )
+  }
 
   const recentClients = clients?.slice(0, 6) ?? []
 
