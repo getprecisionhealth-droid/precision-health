@@ -79,7 +79,7 @@ export default function SignupPage() {
         : `${formData.full_name}'s Practice`
 
       const { createOrganizationAction } = await import('@/app/actions/org-actions')
-      const result = await createOrganizationAction({ name: orgName })
+      const result = await createOrganizationAction({ name: orgName, role })
       if (result.error) {
         console.error('Org creation error:', result.error)
       }
