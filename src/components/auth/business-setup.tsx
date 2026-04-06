@@ -1,15 +1,15 @@
-'use client'
-
 import { useState } from 'react'
 import { Building2, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
+import { KEYS } from '@/hooks/use-data'
 
 type BusinessType = null | 'agency' | 'solo'
 
 export function BusinessSetup({ profileName }: { profileName: string }) {
   const router = useRouter()
+  const qc = useQueryClient()
   const [businessType, setBusinessType] = useState<BusinessType>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -22,33 +22,18 @@ export function BusinessSetup({ profileName }: { profileName: string }) {
 
     try {
       const role = type === 'agency' ? 'admin' : 'admin_trainer'
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) throw new Error('Not authenticated')
-
-      // Update their role in the profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ role })
-        .eq('id', user.id)
-
-      if (profileError) throw profileError
-
-      // Update their user_metadata role for middleware routing
-      await supabase.auth.updateUser({
-        data: { role }
-      })
-
       const orgName = type === 'agency'
         ? `${profileName || 'Your'}'s Agency`
         : `${profileName || 'Your'}'s Practice`
 
       const { createOrganizationAction } = await import('@/app/actions/org-actions')
-      const result = await createOrganizationAction({ name: orgName })
+      const result = await createOrganizationAction({ name: orgName, role })
       
       if (result.error) throw new Error(result.error)
 
+      // Invalidate the profile query so the dashboard refetches and sees the organization_id
+      await qc.invalidateQueries({ queryKey: KEYS.profile })
+      
       router.refresh()
     } catch (e: any) {
       setServerError(e.message || 'An error occurred setting up your business.')
