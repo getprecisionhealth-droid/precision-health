@@ -67,9 +67,21 @@ export default function SignupPage() {
     }
 
     if (authData.user && !authData.session) {
-      setServerError('Account created! Please check your email for a verification link.')
-      setIsCreating(false)
-      return
+      // 1. Auto-confirm the user in the background
+      const { autoConfirmUserAction } = await import('@/app/actions/org-actions')
+      await autoConfirmUserAction(authData.user.id)
+      
+      // 2. Log them in to establish the session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password
+      })
+
+      if (signInError) {
+        setServerError('Account created but failed automatic login. Try logging in.')
+        setIsCreating(false)
+        return
+      }
     }
 
     // Create organization

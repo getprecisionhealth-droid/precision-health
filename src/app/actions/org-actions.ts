@@ -39,3 +39,14 @@ export async function createOrganizationAction(input: { name: string; role: 'adm
 
   return { organizationId: org.id }
 }
+
+// Bypasses email confirmation during signup directly via backend rights
+export async function autoConfirmUserAction(userId: string) {
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    email_confirm: true
+  })
+  
+  if (error) return { error: error.message }
+  return { success: true }
+}
