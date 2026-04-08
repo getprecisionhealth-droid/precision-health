@@ -258,12 +258,31 @@ export default function TeamPage() {
           <CardContent>
             <div className="space-y-2">
               {pendingInvites.map(inv => (
-                <div key={inv.id} className="flex items-center gap-3 p-3 rounded-lg border border-border-subtle bg-surface-2">
+                <div key={inv.id} className="flex items-center gap-3 p-3 rounded-lg border border-border-subtle bg-surface-2 group">
                   <Mail className="h-4 w-4 text-text-muted flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-text-primary truncate">{inv.email}</p>
                     <p className="text-xs text-text-muted capitalize">{inv.role}</p>
                   </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity text-text-secondary mr-2 hidden sm:flex items-center gap-1.5"
+                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/invite?token=${inv.token}`)}
+                    title="Copy Invite Link"
+                  >
+                    <Link2 className="h-3 w-3" />
+                    Copy Link
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0 text-text-secondary sm:hidden"
+                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/invite?token=${inv.token}`)}
+                    title="Copy Invite Link"
+                  >
+                    <Link2 className="h-4 w-4" />
+                  </Button>
                   <span className="text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">Pending</span>
                 </div>
               ))}
