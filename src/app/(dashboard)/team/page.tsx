@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { UserPlus, Users, Mail, ArrowRight, Check, Loader2, Link2 } from 'lucide-react'
+import { UserPlus, Users, Mail, ArrowRight, Check, Loader2, Link2, MessageCircle } from 'lucide-react'
 import { useOrganizationTrainers, useOrganizationClients, useInvitations, useSendInvite, useAssignTrainerToClient, useTrainerAssignments } from '@/hooks/use-data'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, UserAvatar, Skeleton, Badge } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -267,12 +267,41 @@ export default function TeamPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
+                    className="h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity text-emerald-600 border-emerald-600/20 hover:bg-emerald-600/10 mr-2 hidden sm:flex items-center gap-1.5"
+                    onClick={() => {
+                      const url = `${window.location.origin}/invite?token=${inv.token}`
+                      const text = encodeURIComponent(`Join me on Precision Health! Here is your private invite link: ${url}`)
+                      window.open(`https://wa.me/?text=${text}`, '_blank')
+                    }}
+                    title="Share via WhatsApp"
+                  >
+                    <MessageCircle className="h-3 w-3" />
+                    WhatsApp
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
                     className="h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity text-text-secondary mr-2 hidden sm:flex items-center gap-1.5"
                     onClick={() => navigator.clipboard.writeText(`${window.location.origin}/invite?token=${inv.token}`)}
                     title="Copy Invite Link"
                   >
                     <Link2 className="h-3 w-3" />
                     Copy Link
+                  </Button>
+                  
+                  {/* Mobile versions */}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0 text-emerald-600 sm:hidden mr-1"
+                    onClick={() => {
+                      const url = `${window.location.origin}/invite?token=${inv.token}`
+                      const text = encodeURIComponent(`Join me on Precision Health! Here is your private invite link: ${url}`)
+                      window.open(`https://wa.me/?text=${text}`, '_blank')
+                    }}
+                    title="Share via WhatsApp"
+                  >
+                    <MessageCircle className="h-4 w-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
