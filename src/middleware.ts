@@ -23,7 +23,20 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // ⚡ Use getSession() instead of getUser() in middleware.
+  // getUser() makes a network round-trip to Supabase on EVERY request which
+  // causes MIDDLEWARE_INVOCATION_TIMEOUT on Vercel's Edge runtime.
+  // getSession() reads the session from the cookie locally — no network call.
+  // Full server-side verification (getUser) is done inside individual pages/API routes.
+  let session = null
+  try {
+    const { data } = await supabase.auth.getSession()
+    session = data.session
+  } catch {
+    // If session parsing fails, treat as unauthenticated and fall through
+  }
+
+  const user = session?.user ?? null
   const { pathname } = request.nextUrl
 
   // Public routes
@@ -47,7 +60,6 @@ export async function middleware(request: NextRequest) {
     const clientRoutes = ['/client-dashboard', '/my-workouts', '/nutrition', '/my-health', '/my-goals', '/client-settings', '/my-calendar']
 
     const isAdminRoute = adminRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
-    const isTrainerRoute = trainerRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
     const isClientRoute = clientRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
 
     // Redirect from auth pages to correct dashboard
