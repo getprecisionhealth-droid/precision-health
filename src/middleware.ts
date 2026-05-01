@@ -1,66 +1,90 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Decode a Supabase JWT payload from cookies WITHOUT any network call.
+ * Decode the Supabase session from cookies WITHOUT any network call.
  *
- * Supabase stores the session in a cookie named:
- *   sb-<project-ref>-auth-token
- * The value is a base64url-encoded JSON array: [accessToken, refreshToken]
- * We only need the access token (index 0), which is a standard JWT.
+ * Supabase SSR stores the session in one of these formats:
+ *   1. Single cookie:  sb-<ref>-auth-token  = base64url(JSON([accessToken, refreshToken]))
+ *   2. Chunked cookies: sb-<ref>-auth-token.0, .1, .2 ... (when JWT > 4KB)
  *
- * We decode the JWT payload locally (no signature verification needed for
- * routing decisions — actual auth verification happens inside pages/API routes).
+ * We reassemble the chunks, parse the access token (a JWT), and decode
+ * the payload to get the user's role for routing — no network call needed.
  */
-function getSessionFromCookies(request: NextRequest): { user: { role: string } | null } {
+function getSessionFromCookies(request: NextRequest): { role: string } | null {
   try {
-    // Find the Supabase auth cookie (pattern: sb-*-auth-token)
-    const authCookie = request.cookies.getAll().find(
-      (c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
+    const allCookies = request.cookies.getAll()
+
+    // Find the base auth cookie name (sb-<ref>-auth-token)
+    const baseCookie = allCookies.find(
+      (c) => c.name.match(/^sb-.+-auth-token$/) && !c.name.includes('.0')
+    )
+    const chunkedBase = allCookies.find((c) =>
+      c.name.match(/^sb-.+-auth-token\.0$/)
     )
 
-    if (!authCookie?.value) return { user: null }
+    let rawValue: string | null = null
 
-    // The cookie value is a base64url-encoded JSON string: [accessToken, refreshToken]
-    let tokenValue = authCookie.value
-
-    // Handle URL-encoded values
-    if (tokenValue.startsWith('%')) {
-      tokenValue = decodeURIComponent(tokenValue)
+    if (baseCookie) {
+      rawValue = baseCookie.value
+    } else if (chunkedBase) {
+      // Reassemble chunked cookies: .0, .1, .2, ...
+      const baseName = chunkedBase.name.replace('.0', '')
+      let combined = ''
+      let i = 0
+      while (true) {
+        const chunk = request.cookies.get(`${baseName}.${i}`)
+        if (!chunk) break
+        combined += chunk.value
+        i++
+      }
+      rawValue = combined
     }
 
-    // Parse the array if wrapped in JSON
-    let accessToken: string
-    if (tokenValue.startsWith('[')) {
-      const parsed = JSON.parse(tokenValue)
+    if (!rawValue) return null
+
+    // URL-decode if needed
+    if (rawValue.startsWith('%')) {
+      rawValue = decodeURIComponent(rawValue)
+    }
+
+    // Parse the value — could be JSON array, JSON object, or raw JWT
+    let accessToken: string | null = null
+
+    if (rawValue.startsWith('[')) {
+      const parsed = JSON.parse(rawValue)
       accessToken = parsed[0]
-    } else if (tokenValue.startsWith('{')) {
-      const parsed = JSON.parse(tokenValue)
+    } else if (rawValue.startsWith('{')) {
+      const parsed = JSON.parse(rawValue)
       accessToken = parsed.access_token
+    } else if (rawValue.startsWith('base64-')) {
+      // Supabase v2 stores it as base64-<encoded>
+      const decoded = atob(rawValue.replace('base64-', ''))
+      const parsed = JSON.parse(decoded)
+      accessToken = parsed.access_token ?? parsed[0]
     } else {
-      // It might be the raw JWT directly
-      accessToken = tokenValue
+      // Raw JWT
+      accessToken = rawValue
     }
 
-    if (!accessToken) return { user: null }
+    if (!accessToken) return null
 
-    // Decode the JWT payload (middle segment, base64url)
+    // Decode JWT payload (base64url → JSON)
     const parts = accessToken.split('.')
-    if (parts.length !== 3) return { user: null }
+    if (parts.length !== 3) return null
 
     const payload = JSON.parse(
       atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
     )
 
-    // Check expiry
+    // Treat expired tokens as unauthenticated — page will redirect to login for refresh
     if (payload.exp && payload.exp * 1000 < Date.now()) {
-      // Token expired — treat as unauthenticated; page will handle refresh
-      return { user: null }
+      return null
     }
 
     const role = (payload.user_metadata?.role as string) ?? 'admin_trainer'
-    return { user: { role } }
+    return { role }
   } catch {
-    return { user: null }
+    return null
   }
 }
 
@@ -70,28 +94,40 @@ export function middleware(request: NextRequest) {
   // Public routes — always accessible
   const publicRoutes = ['/login', '/signup', '/invite', '/']
   const isPublicRoute =
-    publicRoutes.includes(pathname) || pathname.startsWith('/api/auth')
+    publicRoutes.includes(pathname) ||
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/')
 
-  // Decode session from cookie — purely local, zero network calls
-  const { user } = getSessionFromCookies(request)
+  // Decode session locally — zero network calls, zero timeout risk
+  const session = getSessionFromCookies(request)
 
   // Redirect unauthenticated users to login
-  if (!user && !isPublicRoute) {
+  if (!session && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Role-based routing for authenticated users
-  if (user) {
-    const { role } = user
+  if (session) {
+    const { role } = session
     const isAuthPage = ['/login', '/signup', '/invite'].includes(pathname)
 
-    const adminRoutes = ['/dashboard', '/clients', '/workouts', '/health', '/goals', '/notes', '/settings', '/calendar', '/nutrition-plans', '/team', '/exercise-library']
-    const clientRoutes = ['/client-dashboard', '/my-workouts', '/nutrition', '/my-health', '/my-goals', '/client-settings', '/my-calendar']
+    const adminRoutes = [
+      '/dashboard', '/clients', '/workouts', '/health', '/goals',
+      '/notes', '/settings', '/calendar', '/nutrition-plans', '/team', '/exercise-library',
+    ]
+    const clientRoutes = [
+      '/client-dashboard', '/my-workouts', '/nutrition', '/my-health',
+      '/my-goals', '/client-settings', '/my-calendar',
+    ]
 
-    const isAdminRoute = adminRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'))
-    const isClientRoute = clientRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'))
+    const isAdminRoute = adminRoutes.some(
+      (r) => pathname === r || pathname.startsWith(r + '/')
+    )
+    const isClientRoute = clientRoutes.some(
+      (r) => pathname === r || pathname.startsWith(r + '/')
+    )
 
-    // Redirect from auth pages to the correct dashboard
+    // Redirect from auth pages / root to the correct dashboard
     if (isAuthPage || pathname === '/') {
       if (role === 'client') return NextResponse.redirect(new URL('/client-dashboard', request.url))
       if (role === 'trainer') return NextResponse.redirect(new URL('/trainer-dashboard', request.url))
