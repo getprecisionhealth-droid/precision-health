@@ -1,76 +1,98 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // ⚡ Use getSession() instead of getUser() in middleware.
-  // getUser() makes a network round-trip to Supabase on EVERY request which
-  // causes MIDDLEWARE_INVOCATION_TIMEOUT on Vercel's Edge runtime.
-  // getSession() reads the session from the cookie locally — no network call.
-  // Full server-side verification (getUser) is done inside individual pages/API routes.
-  let session = null
+/**
+ * Decode a Supabase JWT payload from cookies WITHOUT any network call.
+ *
+ * Supabase stores the session in a cookie named:
+ *   sb-<project-ref>-auth-token
+ * The value is a base64url-encoded JSON array: [accessToken, refreshToken]
+ * We only need the access token (index 0), which is a standard JWT.
+ *
+ * We decode the JWT payload locally (no signature verification needed for
+ * routing decisions — actual auth verification happens inside pages/API routes).
+ */
+function getSessionFromCookies(request: NextRequest): { user: { role: string } | null } {
   try {
-    const { data } = await supabase.auth.getSession()
-    session = data.session
-  } catch {
-    // If session parsing fails, treat as unauthenticated and fall through
-  }
+    // Find the Supabase auth cookie (pattern: sb-*-auth-token)
+    const authCookie = request.cookies.getAll().find(
+      (c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
+    )
 
-  const user = session?.user ?? null
+    if (!authCookie?.value) return { user: null }
+
+    // The cookie value is a base64url-encoded JSON string: [accessToken, refreshToken]
+    let tokenValue = authCookie.value
+
+    // Handle URL-encoded values
+    if (tokenValue.startsWith('%')) {
+      tokenValue = decodeURIComponent(tokenValue)
+    }
+
+    // Parse the array if wrapped in JSON
+    let accessToken: string
+    if (tokenValue.startsWith('[')) {
+      const parsed = JSON.parse(tokenValue)
+      accessToken = parsed[0]
+    } else if (tokenValue.startsWith('{')) {
+      const parsed = JSON.parse(tokenValue)
+      accessToken = parsed.access_token
+    } else {
+      // It might be the raw JWT directly
+      accessToken = tokenValue
+    }
+
+    if (!accessToken) return { user: null }
+
+    // Decode the JWT payload (middle segment, base64url)
+    const parts = accessToken.split('.')
+    if (parts.length !== 3) return { user: null }
+
+    const payload = JSON.parse(
+      atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
+    )
+
+    // Check expiry
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      // Token expired — treat as unauthenticated; page will handle refresh
+      return { user: null }
+    }
+
+    const role = (payload.user_metadata?.role as string) ?? 'admin_trainer'
+    return { user: { role } }
+  } catch {
+    return { user: null }
+  }
+}
+
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Public routes
+  // Public routes — always accessible
   const publicRoutes = ['/login', '/signup', '/invite', '/']
-  const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/api/auth')
+  const isPublicRoute =
+    publicRoutes.includes(pathname) || pathname.startsWith('/api/auth')
+
+  // Decode session from cookie — purely local, zero network calls
+  const { user } = getSessionFromCookies(request)
 
   // Redirect unauthenticated users to login
   if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // For authenticated users: role-based routing
+  // Role-based routing for authenticated users
   if (user) {
-    const role = (user.user_metadata?.role as string) ?? 'admin_trainer'
-
+    const { role } = user
     const isAuthPage = ['/login', '/signup', '/invite'].includes(pathname)
 
-    // Route groups
     const adminRoutes = ['/dashboard', '/clients', '/workouts', '/health', '/goals', '/notes', '/settings', '/calendar', '/nutrition-plans', '/team', '/exercise-library']
-    const trainerRoutes = ['/trainer-dashboard', '/clients', '/workouts', '/health', '/goals', '/notes', '/settings', '/calendar', '/nutrition-plans', '/exercise-library']
     const clientRoutes = ['/client-dashboard', '/my-workouts', '/nutrition', '/my-health', '/my-goals', '/client-settings', '/my-calendar']
 
-    const isAdminRoute = adminRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
-    const isClientRoute = clientRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
+    const isAdminRoute = adminRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'))
+    const isClientRoute = clientRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'))
 
-    // Redirect from auth pages to correct dashboard
-    if (isAuthPage) {
-      if (role === 'client') return NextResponse.redirect(new URL('/client-dashboard', request.url))
-      if (role === 'trainer') return NextResponse.redirect(new URL('/trainer-dashboard', request.url))
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-
-    // Redirect root to correct dashboard
-    if (pathname === '/') {
+    // Redirect from auth pages to the correct dashboard
+    if (isAuthPage || pathname === '/') {
       if (role === 'client') return NextResponse.redirect(new URL('/client-dashboard', request.url))
       if (role === 'trainer') return NextResponse.redirect(new URL('/trainer-dashboard', request.url))
       return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -83,13 +105,12 @@ export async function middleware(request: NextRequest) {
     if (role === 'trainer' && isClientRoute) {
       return NextResponse.redirect(new URL('/trainer-dashboard', request.url))
     }
-    // Trainers cannot access admin-only routes
     if (role === 'trainer' && (pathname === '/team' || pathname.startsWith('/team/'))) {
       return NextResponse.redirect(new URL('/trainer-dashboard', request.url))
     }
   }
 
-  return supabaseResponse
+  return NextResponse.next()
 }
 
 export const config = {
