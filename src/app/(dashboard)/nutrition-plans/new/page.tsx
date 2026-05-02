@@ -12,16 +12,11 @@ import { Input, Label, FormField } from '@/components/ui/input'
 const GOALS = ['Acclimatization', 'Fat Loss', 'Muscle Gain', 'Maintenance', 'Performance', 'Recomposition']
 const PRIORITY_OPTIONS = ['Protein', 'Healthy Fats', 'Fiber', 'Complex Carbs', 'Hydration', 'Micronutrients', 'Meal Timing']
 
-type IngredientInput = { id: string; name: string; portion: string; calories: string; protein_g: string; carbs_g: string; fat_g: string }
-type OptionInput = { id: string; label: string; ingredients: IngredientInput[] }
+type OptionInput = { id: string; label: string; content: string; calories: string; protein_g: string; carbs_g: string; fat_g: string; }
 type MealBlockInput = { id: string; name: string; options: OptionInput[]; collapsed: boolean }
 
-function emptyIngredient(): IngredientInput {
-  return { id: crypto.randomUUID(), name: '', portion: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' }
-}
-
 function emptyOption(): OptionInput {
-  return { id: crypto.randomUUID(), label: '', ingredients: [emptyIngredient()] }
+  return { id: crypto.randomUUID(), label: '', content: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' }
 }
 
 function emptyBlock(name = ''): MealBlockInput {
@@ -103,42 +98,6 @@ export default function NewNutritionPlanPage() {
     ))
   }
 
-  function addIngredient(blockId: string, optionId: string) {
-    setBlocks(bs => bs.map(b =>
-      b.id === blockId ? {
-        ...b,
-        options: b.options.map(o =>
-          o.id === optionId ? { ...o, ingredients: [...o.ingredients, emptyIngredient()] } : o
-        )
-      } : b
-    ))
-  }
-
-  function removeIngredient(blockId: string, optionId: string, ingredientId: string) {
-    setBlocks(bs => bs.map(b =>
-      b.id === blockId ? {
-        ...b,
-        options: b.options.map(o =>
-          o.id === optionId ? { ...o, ingredients: o.ingredients.filter(i => i.id !== ingredientId) } : o
-        )
-      } : b
-    ))
-  }
-
-  function updateIngredient(blockId: string, optionId: string, ingredientId: string, field: string, value: string) {
-    setBlocks(bs => bs.map(b =>
-      b.id === blockId ? {
-        ...b,
-        options: b.options.map(o =>
-          o.id === optionId ? {
-            ...o,
-            ingredients: o.ingredients.map(i => i.id === ingredientId ? { ...i, [field]: value } : i)
-          } : o
-        )
-      } : b
-    ))
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.client_id || !form.title) return
@@ -162,35 +121,19 @@ export default function NewNutritionPlanPage() {
     let sortOrder = 0
     for (const block of blocks) {
       for (const option of block.options) {
-        if (!option.label && option.ingredients.length === 0) continue
-        const ingredients = option.ingredients
-          .filter(i => i.name)
-          .map(i => ({
-            name: i.name,
-            portion: i.portion || null,
-            calories: i.calories ? Number(i.calories) : null,
-            protein_g: i.protein_g ? Number(i.protein_g) : null,
-            carbs_g: i.carbs_g ? Number(i.carbs_g) : null,
-            fat_g: i.fat_g ? Number(i.fat_g) : null,
-          }))
-
-        // Calculate total macros for option
-        const totalCals = ingredients.reduce((s, i) => s + (i.calories ?? 0), 0)
-        const totalProt = ingredients.reduce((s, i) => s + (i.protein_g ?? 0), 0)
-        const totalCarbs = ingredients.reduce((s, i) => s + (i.carbs_g ?? 0), 0)
-        const totalFat = ingredients.reduce((s, i) => s + (i.fat_g ?? 0), 0)
-
+        if (!option.label && !option.content) continue
+        
         await addMeal.mutateAsync({
           plan_id: plan.id,
           meal_type: 'breakfast', // backwards compat
           meal_block: block.name,
           option_label: option.label || `${block.name} Option`,
           food_name: option.label || `${block.name} Option`,
-          ingredients: JSON.stringify(ingredients),
-          calories: totalCals || undefined,
-          protein_g: totalProt || undefined,
-          carbs_g: totalCarbs || undefined,
-          fat_g: totalFat || undefined,
+          content: option.content || null,
+          calories: option.calories ? Number(option.calories) : undefined,
+          protein_g: option.protein_g ? Number(option.protein_g) : undefined,
+          carbs_g: option.carbs_g ? Number(option.carbs_g) : undefined,
+          fat_g: option.fat_g ? Number(option.fat_g) : undefined,
           sort_order: sortOrder++,
         } as any)
       }
@@ -370,53 +313,38 @@ export default function NewNutritionPlanPage() {
                       </div>
 
                       <FormField label="Option Label">
-                        <Input placeholder="e.g. Chicken Sandwich" value={option.label}
+                        <Input placeholder="e.g. High Protein Breakfast" value={option.label}
                           onChange={e => updateOption(block.id, option.id, 'label', e.target.value)} />
                       </FormField>
 
-                      {/* Ingredients */}
+                      {/* Content */}
                       <div className="space-y-2">
-                        <Label className="text-xs mb-1">Ingredients</Label>
-                        {option.ingredients.map((ing) => (
-                          <div key={ing.id} className="grid grid-cols-12 gap-2 items-end">
-                            <div className="col-span-3">
-                              <Input className="h-8 text-xs" placeholder="Name" value={ing.name}
-                                onChange={e => updateIngredient(block.id, option.id, ing.id, 'name', e.target.value)} />
-                            </div>
-                            <div className="col-span-2">
-                              <Input className="h-8 text-xs" placeholder="Portion" value={ing.portion}
-                                onChange={e => updateIngredient(block.id, option.id, ing.id, 'portion', e.target.value)} />
-                            </div>
-                            <div className="col-span-1">
-                              <Input type="number" className="h-8 text-xs" placeholder="kcal" value={ing.calories}
-                                onChange={e => updateIngredient(block.id, option.id, ing.id, 'calories', e.target.value)} />
-                            </div>
-                            <div className="col-span-1">
-                              <Input type="number" className="h-8 text-xs" placeholder="P" value={ing.protein_g}
-                                onChange={e => updateIngredient(block.id, option.id, ing.id, 'protein_g', e.target.value)} />
-                            </div>
-                            <div className="col-span-1">
-                              <Input type="number" className="h-8 text-xs" placeholder="C" value={ing.carbs_g}
-                                onChange={e => updateIngredient(block.id, option.id, ing.id, 'carbs_g', e.target.value)} />
-                            </div>
-                            <div className="col-span-1">
-                              <Input type="number" className="h-8 text-xs" placeholder="F" value={ing.fat_g}
-                                onChange={e => updateIngredient(block.id, option.id, ing.id, 'fat_g', e.target.value)} />
-                            </div>
-                            <div className="col-span-3 flex gap-1 justify-end">
-                              <button type="button" onClick={() => addIngredient(block.id, option.id)}
-                                className="h-8 w-8 flex items-center justify-center text-indigo-400 hover:bg-indigo-600/10 rounded transition-colors">
-                                <Plus className="h-3.5 w-3.5" />
-                              </button>
-                              {option.ingredients.length > 1 && (
-                                <button type="button" onClick={() => removeIngredient(block.id, option.id, ing.id)}
-                                  className="h-8 w-8 flex items-center justify-center text-red-400 hover:bg-red-600/10 rounded transition-colors">
-                                  <Trash2 className="h-3 w-3" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                        <Label className="text-xs mb-1">Meal Description & Instructions</Label>
+                        <textarea
+                          placeholder="Describe the meal, list ingredients, or provide cooking instructions here..."
+                          className="w-full min-h-[100px] p-3 rounded-lg border border-border-subtle bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          value={option.content}
+                          onChange={e => updateOption(block.id, option.id, 'content', e.target.value)}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-3">
+                        <FormField label="Calories">
+                          <Input type="number" placeholder="kcal" value={option.calories}
+                            onChange={e => updateOption(block.id, option.id, 'calories', e.target.value)} />
+                        </FormField>
+                        <FormField label="Protein (g)">
+                          <Input type="number" placeholder="P" value={option.protein_g}
+                            onChange={e => updateOption(block.id, option.id, 'protein_g', e.target.value)} />
+                        </FormField>
+                        <FormField label="Carbs (g)">
+                          <Input type="number" placeholder="C" value={option.carbs_g}
+                            onChange={e => updateOption(block.id, option.id, 'carbs_g', e.target.value)} />
+                        </FormField>
+                        <FormField label="Fats (g)">
+                          <Input type="number" placeholder="F" value={option.fat_g}
+                            onChange={e => updateOption(block.id, option.id, 'fat_g', e.target.value)} />
+                        </FormField>
                       </div>
                     </div>
                   ))}

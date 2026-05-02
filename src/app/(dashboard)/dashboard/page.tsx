@@ -61,7 +61,7 @@ export default function DashboardPage() {
               <Link href="/team"><UserPlus className="h-3.5 w-3.5" />Team</Link>
             </Button>
             <Button asChild size="sm">
-              <Link href="/clients/new"><Plus className="h-3.5 w-3.5" />Add Client</Link>
+              <Link href="/clients"><Plus className="h-3.5 w-3.5" />Add Client</Link>
             </Button>
           </div>
         }
@@ -204,7 +204,7 @@ export default function DashboardPage() {
                 { href: '/clients/new', icon: Users, label: 'Add new client' },
                 { href: '/team', icon: UserPlus, label: 'Manage team' },
                 { href: '/workouts/new', icon: Dumbbell, label: 'Create workout plan' },
-                { href: '/nutrition-plans/new', icon: Apple, label: 'Create diet plan' },
+                { href: '/nutrition-plans', icon: Apple, label: 'Create diet plan' },
                 { href: '/health', icon: Activity, label: 'Log health metrics' },
               ].map(({ href, icon: Icon, label }) => (
                 <Button key={href} variant="ghost" className="w-full justify-start gap-3 h-9" asChild>

@@ -126,7 +126,7 @@ export default function TrainerDashboardPage() {
             <CardContent className="pt-0 space-y-2">
               {[
                 { href: '/workouts/new', icon: Dumbbell, label: 'Create workout plan' },
-                { href: '/nutrition-plans/new', icon: Apple, label: 'Create diet plan' },
+                { href: '/nutrition-plans', icon: Apple, label: 'Diet Plans' },
                 { href: '/health', icon: Activity, label: 'Log health metrics' },
                 { href: '/calendar', icon: Activity, label: 'View calendar' },
               ].map(({ href, icon: Icon, label }) => (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 
@@ -10,9 +10,10 @@ import { createClient } from '@/lib/supabase/client'
  */
 export function useRealtimeSync() {
   const qc = useQueryClient()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   useEffect(() => {
+    const supabase = supabaseRef.current
     const channel = supabase
       .channel('realtime-sync')
       .on(
@@ -71,5 +72,6 @@ export function useRealtimeSync() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [qc, supabase])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qc])
 }

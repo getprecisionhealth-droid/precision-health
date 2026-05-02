@@ -121,6 +121,7 @@ export interface WorkoutPlanExercise {
   plan_id: string
   exercise_id: string
   day_of_week: number | null
+  scheduled_date: string | null
   order_index: number
   sets: number | null
   reps: string | null
@@ -128,6 +129,7 @@ export interface WorkoutPlanExercise {
   rest_seconds: number | null
   duration_secs: number | null
   rpe: number | null
+  group_name: string | null
   notes: string | null
   created_at: string
   // Joined
@@ -237,6 +239,7 @@ export interface NutritionLog {
   carbs_g: number | null
   fat_g: number | null
   notes: string | null
+  content: string | null
   created_at: string
 }
 
@@ -286,6 +289,7 @@ export interface NutritionPlanMeal {
   fat_g: number | null
   ingredients: MealIngredient[] | null
   notes: string | null
+  content: string | null
   sort_order: number | null
   created_at: string
 }

@@ -207,13 +207,9 @@ export default function ClientNutritionPage() {
                         <p className="text-sm font-medium text-text-primary">
                           {meal.option_label || meal.food_name}
                         </p>
-                        {ingredients.length > 0 && (
-                          <div className="mt-1.5 space-y-0.5">
-                            {ingredients.map((ing, i) => (
-                              <p key={i} className="text-xs text-text-muted">
-                                {ing.name}{ing.portion ? ` (${ing.portion})` : ''}
-                              </p>
-                            ))}
+                        {meal.content && (
+                          <div className="mt-1.5 p-2 rounded bg-surface-2">
+                            <p className="text-xs text-text-muted whitespace-pre-wrap">{meal.content}</p>
                           </div>
                         )}
                         {/* Macro summary for this option */}

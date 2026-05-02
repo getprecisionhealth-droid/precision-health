@@ -20,7 +20,7 @@ function getNavItems(role: string) {
     { href: '/clients', icon: Users, label: 'Clients' },
     { href: '/workouts', icon: Dumbbell, label: 'Workouts' },
     { href: '/calendar', icon: CalendarIcon, label: 'Calendar' },
-    { href: '/nutrition-plans/new', icon: Apple, label: 'Diet Plans' },
+    { href: '/nutrition-plans', icon: Apple, label: 'Diet Plans' },
     { href: '/exercise-library', icon: Library, label: 'Exercise Library' },
     { href: '/health', icon: Activity, label: 'Health Metrics' },
     { href: '/goals', icon: Target, label: 'Goals' },

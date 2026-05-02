@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, Plus, Trash2, Dumbbell, GripVertical,
@@ -36,10 +36,13 @@ function ExerciseRow({ item, onRemove }: ExerciseRowProps) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-text-primary truncate">{ex?.name}</p>
           <div className="flex items-center gap-3 mt-0.5 text-[10px] text-text-muted">
+            {item.group_name && <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-indigo-500/10 text-indigo-400 border-indigo-500/20">{item.group_name}</Badge>}
             {item.sets && <span>{item.sets} sets</span>}
             {item.reps && <span>× {item.reps} reps</span>}
             {item.weight_kg && <span>@ {item.weight_kg}kg</span>}
             {item.rest_seconds && <span>{item.rest_seconds}s rest</span>}
+            {item.duration_secs && <span>{item.duration_secs}s dur</span>}
+            {item.rpe && <span>RPE {item.rpe}</span>}
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -65,6 +68,8 @@ function ExerciseRow({ item, onRemove }: ExerciseRowProps) {
             { label: 'Reps', value: item.reps },
             { label: 'Weight (kg)', value: item.weight_kg },
             { label: 'Rest (sec)', value: item.rest_seconds },
+            { label: 'Duration (sec)', value: item.duration_secs },
+            { label: 'RPE', value: item.rpe },
           ].map(({ label, value }) => (
             <div key={label}>
               <p className="text-[10px] text-text-muted mb-1">{label}</p>
@@ -86,13 +91,15 @@ function ExerciseRow({ item, onRemove }: ExerciseRowProps) {
 interface AddExerciseFormProps {
   planId: string
   exercise: Exercise
+  selectedDay: number
+  currentDayExerciseCount: number
   onDone: () => void
 }
 
-function AddExerciseForm({ planId, exercise, onDone }: AddExerciseFormProps) {
+function AddExerciseForm({ planId, exercise, selectedDay, currentDayExerciseCount, onDone }: AddExerciseFormProps) {
   const addExercise = useAddExerciseToPlan()
   const [form, setForm] = useState({
-    day_of_week: '1', sets: '3', reps: '10', weight_kg: '', rest_seconds: '60', notes: ''
+    day_of_week: String(selectedDay), scheduled_date: '', sets: '3', reps: '10', weight_kg: '', rest_seconds: '60', duration_secs: '', rpe: '', group_name: '', notes: ''
   })
 
   async function handleAdd() {
@@ -100,12 +107,16 @@ function AddExerciseForm({ planId, exercise, onDone }: AddExerciseFormProps) {
       plan_id: planId,
       exercise_id: exercise.id,
       day_of_week: parseInt(form.day_of_week) || undefined,
+      scheduled_date: form.scheduled_date || undefined,
       sets: parseInt(form.sets) || undefined,
       reps: form.reps || undefined,
       weight_kg: parseFloat(form.weight_kg) || undefined,
       rest_seconds: parseInt(form.rest_seconds) || undefined,
+      duration_secs: parseInt(form.duration_secs) || undefined,
+      rpe: parseInt(form.rpe) || undefined,
+      group_name: form.group_name || undefined,
       notes: form.notes || undefined,
-      order_index: 0,
+      order_index: currentDayExerciseCount,
     })
     onDone()
   }
@@ -127,6 +138,9 @@ function AddExerciseForm({ planId, exercise, onDone }: AddExerciseFormProps) {
             ))}
           </Select>
         </FormField>
+        <FormField label="Date (optional)">
+          <Input type="date" {...f('scheduled_date')} />
+        </FormField>
         <FormField label="Sets">
           <Input type="number" min="1" placeholder="3" {...f('sets')} />
         </FormField>
@@ -138,6 +152,15 @@ function AddExerciseForm({ planId, exercise, onDone }: AddExerciseFormProps) {
         </FormField>
         <FormField label="Rest (seconds)">
           <Input type="number" placeholder="60" {...f('rest_seconds')} />
+        </FormField>
+        <FormField label="Duration (sec)">
+          <Input type="number" placeholder="optional" {...f('duration_secs')} />
+        </FormField>
+        <FormField label="RPE (1-10)">
+          <Input type="number" min="1" max="10" placeholder="e.g. 8" {...f('rpe')} />
+        </FormField>
+        <FormField label="Group Name (e.g. Circuit A)">
+          <Input placeholder="optional" {...f('group_name')} />
         </FormField>
         <FormField label="Notes">
           <Input placeholder="optional" {...f('notes')} />
@@ -278,6 +301,8 @@ export default function WorkoutPlanDetailPage({ params }: { params: Promise<{ id
                 <AddExerciseForm
                   planId={id}
                   exercise={pendingExercise}
+                  selectedDay={selectedDay}
+                  currentDayExerciseCount={currentDayExercises.length}
                   onDone={() => setPendingExercise(null)}
                 />
               )}
@@ -326,7 +351,7 @@ export default function WorkoutPlanDetailPage({ params }: { params: Promise<{ id
               <CardHeader><CardTitle>Exercise Library</CardTitle></CardHeader>
               <CardContent>
                 <ExercisePicker
-                  excludeIds={[]}
+                  excludeIds={existingIds}
                   onAdd={(exercise) => {
                     setPendingExercise(exercise)
                     setShowPicker(false)

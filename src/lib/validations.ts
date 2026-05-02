@@ -66,6 +66,8 @@ export const workoutPlanSchema = z.object({
   plan_type: z.enum(['template', 'assigned']).default('template'),
 })
 
+
+
 export const workoutPlanExerciseSchema = z.object({
   exercise_id: z.string().uuid(),
   day_of_week: z.coerce.number().min(1).max(7).optional(),
@@ -74,7 +76,9 @@ export const workoutPlanExerciseSchema = z.object({
   reps: z.string().optional(),
   weight_kg: z.coerce.number().optional(),
   rest_seconds: z.coerce.number().optional(),
+  duration_secs: z.coerce.number().optional(),
   rpe: z.coerce.number().min(1).max(10).optional(),
+  group_name: z.string().optional(),
   notes: z.string().optional(),
 })
 
@@ -114,7 +118,8 @@ const mealIngredientSchema = z.object({
 
 const mealOptionSchema = z.object({
   label: z.string().min(1, 'Option label required'),
-  ingredients: z.array(mealIngredientSchema).min(1, 'At least one ingredient required'),
+  content: z.string().optional(),
+  ingredients: z.array(mealIngredientSchema).optional(),
 })
 
 const mealBlockSchema = z.object({

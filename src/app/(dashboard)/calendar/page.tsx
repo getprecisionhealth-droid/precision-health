@@ -2,11 +2,14 @@
 
 import { useState } from 'react'
 import { Plus, Video, Dumbbell, Apple, Calendar as CalendarIcon, CheckCircle, Clock, Trash2, Link as LinkIcon, User } from 'lucide-react'
-import { useCalendarEvents, useUpdateCalendarEvent, useDeleteCalendarEvent } from '@/hooks/use-data'
+import { useCalendarEvents, useUpdateCalendarEvent, useDeleteCalendarEvent, useCreateCalendarEvent, useClients } from '@/hooks/use-data'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Input, FormField, Select, Textarea } from '@/components/ui/input'
+import { useProfile } from '@/hooks/use-data'
 
 const EVENT_ICONS: Record<string, React.ElementType> = {
   workout: Dumbbell,
@@ -35,6 +38,117 @@ const formatDate = (d: string) => {
 
 const formatTime = (d: string) => new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(new Date(d))
 
+function CreateEventDialog() {
+  const [open, setOpen] = useState(false)
+  const { data: profile } = useProfile()
+  const { data: clients } = useClients()
+  const createEvent = useCreateCalendarEvent()
+  const activeClients = clients?.filter(c => c.status === 'active') ?? []
+
+  const [form, setForm] = useState({
+    client_id: '',
+    event_type: 'workout' as string,
+    title: '',
+    description: '',
+    date: '',
+    start_time: '09:00',
+    end_time: '10:00',
+    meeting_link: '',
+  })
+
+  const f = (field: keyof typeof form) => ({
+    value: form[field],
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setForm(prev => ({ ...prev, [field]: e.target.value }))
+  })
+
+  async function handleCreate() {
+    if (!form.client_id || !form.title || !form.date || !profile) return
+    const startISO = new Date(`${form.date}T${form.start_time}:00`).toISOString()
+    const endISO = new Date(`${form.date}T${form.end_time}:00`).toISOString()
+
+    await createEvent.mutateAsync({
+      trainer_id: profile.id,
+      client_id: form.client_id,
+      event_type: form.event_type as 'workout' | 'nutrition' | 'video_call' | 'other',
+      title: form.title,
+      description: form.description || null,
+      start_time: startISO,
+      end_time: endISO,
+      status: 'scheduled',
+      meeting_link: form.meeting_link || null,
+    })
+
+    setForm({ client_id: '', event_type: 'workout', title: '', description: '', date: '', start_time: '09:00', end_time: '10:00', meeting_link: '' })
+    setOpen(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <Plus className="h-4 w-4" /> New Event
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Create Calendar Event</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Event Type">
+              <Select {...f('event_type')}>
+                <option value="workout">Workout</option>
+                <option value="video_call">Video Call</option>
+                <option value="nutrition">Nutrition</option>
+                <option value="other">Other</option>
+              </Select>
+            </FormField>
+            <FormField label="Client *">
+              <Select {...f('client_id')} placeholder="Select client">
+                <option value="">Choose client…</option>
+                {activeClients.map(tc => (
+                  <option key={tc.client_id} value={tc.client_id}>
+                    {tc.client?.full_name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          </div>
+          <FormField label="Title *">
+            <Input placeholder="e.g. Upper Body Session" {...f('title')} />
+          </FormField>
+          <FormField label="Date *">
+            <Input type="date" {...f('date')} />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Start Time">
+              <Input type="time" {...f('start_time')} />
+            </FormField>
+            <FormField label="End Time">
+              <Input type="time" {...f('end_time')} />
+            </FormField>
+          </div>
+          <FormField label="Description">
+            <Textarea placeholder="Optional notes..." rows={2} {...f('description')} />
+          </FormField>
+          {form.event_type === 'video_call' && (
+            <FormField label="Meeting Link">
+              <Input placeholder="https://meet.google.com/..." {...f('meeting_link')} />
+            </FormField>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleCreate} loading={createEvent.isPending}
+            disabled={!form.client_id || !form.title || !form.date}>
+            {!createEvent.isPending && 'Create Event'}
+            {createEvent.isPending && 'Creating…'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function TrainerCalendarPage() {
   const { data: events, isLoading } = useCalendarEvents()
   const updateEvent = useUpdateCalendarEvent()
@@ -55,11 +169,7 @@ export default function TrainerCalendarPage() {
       <PageHeader
         title="Schedule & Bookings"
         description="Manage your calendar, assigned schedules, and 1:1 video calls."
-        actions={
-          <Button size="sm">
-            <Plus className="h-4 w-4" /> New Event
-          </Button>
-        }
+        actions={<CreateEventDialog />}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

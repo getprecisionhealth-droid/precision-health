@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/page-header'
 import { Input, FormField } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { manualOnboardingAction } from '@/app/actions/onboarding-actions'
 
 function InviteDialog({ role }: { role: 'trainer' | 'client' }) {
   const [email, setEmail] = useState('')
@@ -75,6 +76,101 @@ function InviteDialog({ role }: { role: 'trainer' | 'client' }) {
   )
 }
 
+function ManualOnboardDialog() {
+  const [email, setEmail] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [role, setRole] = useState<'trainer' | 'client'>('client')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<{ email: string, password: string } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    
+    const res = await manualOnboardingAction({
+      email,
+      fullName,
+      role,
+      generatePassword: true
+    })
+    
+    setLoading(false)
+    if (res.error) {
+      setError(res.error)
+    } else if (res.success && res.credentials) {
+      setResult(res.credentials)
+    }
+  }
+
+  if (result) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-emerald-400">
+          <Check className="h-4 w-4" />
+          <span className="text-sm font-medium">User Created Successfully!</span>
+        </div>
+        <div className="p-3 bg-surface-2 rounded-lg border border-border-subtle">
+          <p className="text-sm text-text-primary mb-2">Share these credentials securely:</p>
+          <div className="space-y-2">
+            <div>
+              <span className="text-xs text-text-muted">Email:</span>
+              <code className="block mt-1 text-sm text-text-secondary bg-background p-2 rounded border border-border-subtle">{result.email}</code>
+            </div>
+            <div>
+              <span className="text-xs text-text-muted">Password:</span>
+              <code className="block mt-1 text-sm text-text-secondary bg-background p-2 rounded border border-border-subtle">{result.password}</code>
+            </div>
+          </div>
+        </div>
+        <Button variant="outline" className="w-full" onClick={() => { setResult(null); setEmail(''); setFullName('') }}>
+          Add another user
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleCreate} className="space-y-4">
+      <FormField label="Full Name">
+        <Input
+          placeholder="Jane Doe"
+          value={fullName}
+          onChange={e => setFullName(e.target.value)}
+          required
+        />
+      </FormField>
+      <FormField label="Email address">
+        <Input
+          type="email"
+          placeholder="jane@example.com"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+      </FormField>
+      <FormField label="Role">
+        <select
+          className="w-full h-10 px-3 py-2 bg-surface text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          value={role}
+          onChange={(e) => setRole(e.target.value as 'trainer' | 'client')}
+        >
+          <option value="client">Client</option>
+          <option value="trainer">Trainer</option>
+        </select>
+      </FormField>
+      <Button type="submit" className="w-full" loading={loading}>
+        {!loading && <><UserPlus className="h-4 w-4 mr-2" /><span>Create User</span></>}
+        {loading && 'Creating…'}
+      </Button>
+      {error && (
+        <p className="text-xs text-red-400">{error}</p>
+      )}
+    </form>
+  )
+}
+
 export default function TeamPage() {
   const { data: trainers, isLoading: trainersLoading } = useOrganizationTrainers()
   const { data: clients, isLoading: clientsLoading } = useOrganizationClients()
@@ -107,10 +203,19 @@ export default function TeamPage() {
         title="Team Management"
         description="Invite trainers and clients, then assign them to each other"
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
             <Dialog>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline"><UserPlus className="h-3.5 w-3.5" />Invite Trainer</Button>
+                <Button size="sm" variant="default"><UserPlus className="h-3.5 w-3.5 mr-1" />Add User Manually</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Create User Profile</DialogTitle></DialogHeader>
+                <ManualOnboardDialog />
+              </DialogContent>
+            </Dialog>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline"><Mail className="h-3.5 w-3.5 mr-1" />Invite Trainer</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Invite a Trainer</DialogTitle></DialogHeader>
@@ -119,7 +224,7 @@ export default function TeamPage() {
             </Dialog>
             <Dialog>
               <DialogTrigger asChild>
-                <Button size="sm"><UserPlus className="h-3.5 w-3.5" />Invite Client</Button>
+                <Button size="sm" variant="outline"><Mail className="h-3.5 w-3.5 mr-1" />Invite Client</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Invite a Client</DialogTitle></DialogHeader>
@@ -163,8 +268,8 @@ export default function TeamPage() {
                     >
                       <UserAvatar name={t.full_name} src={t.avatar_url} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-text-primary truncate">{t.full_name}</p>
-                        <p className="text-xs text-text-muted truncate">{t.email}</p>
+                         <p className="text-sm font-medium text-text-primary truncate">{t.full_name}</p>
+                         <p className="text-xs text-text-muted truncate">{t.email}</p>
                       </div>
                       <span className="text-xs text-text-faint">{assignedCount} clients</span>
                     </button>

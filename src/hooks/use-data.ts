@@ -167,6 +167,7 @@ export function useAssignTrainerToClient() {
       if (!user) throw new Error('Not authenticated')
       const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
       if (!profile?.organization_id) throw new Error('No organization')
+      // 1. Record the admin-level assignment
       const { error } = await supabase.from('trainer_client_assignments').insert({
         organization_id: profile.organization_id,
         trainer_id: input.trainer_id,
@@ -174,10 +175,19 @@ export function useAssignTrainerToClient() {
         assigned_by: user.id,
       })
       if (error) throw error
+      // 2. Also create the trainer_clients link (used by all data hooks)
+      const { error: linkError } = await supabase.from('trainer_clients').upsert({
+        trainer_id: input.trainer_id,
+        client_id: input.client_id,
+        organization_id: profile.organization_id,
+        status: 'active',
+      }, { onConflict: 'trainer_id,client_id' })
+      if (linkError) throw linkError
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.trainerAssignments })
       qc.invalidateQueries({ queryKey: KEYS.trainerClients })
+      qc.invalidateQueries({ queryKey: KEYS.clients })
     },
   })
 }
@@ -410,8 +420,9 @@ export function useAddExerciseToPlan() {
   return useMutation({
     mutationFn: async (input: {
       plan_id: string; exercise_id: string; day_of_week?: number;
+      scheduled_date?: string;
       order_index?: number; sets?: number; reps?: string;
-      weight_kg?: number; rest_seconds?: number; rpe?: number; notes?: string
+      weight_kg?: number; rest_seconds?: number; duration_secs?: number; rpe?: number; group_name?: string; notes?: string
     }) => {
       const { data, error } = await supabase
         .from('workout_plan_exercises').insert(input).select().single()
@@ -632,7 +643,7 @@ export function useLogNutrition() {
     mutationFn: async (input: {
       client_id: string; log_date: string; meal_type: string;
       food_name: string; calories?: number; protein_g?: number;
-      carbs_g?: number; fat_g?: number; notes?: string
+      carbs_g?: number; fat_g?: number; notes?: string; content?: string
     }) => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
@@ -811,7 +822,7 @@ export function useAddNutritionPlanMeal() {
   return useMutation({
     mutationFn: async (input: {
       plan_id: string; meal_type: string; food_name: string; portion?: string;
-      meal_block?: string; option_label?: string; ingredients?: string;
+      meal_block?: string; option_label?: string; ingredients?: string; content?: string;
       calories?: number; protein_g?: number; carbs_g?: number; fat_g?: number; sort_order?: number;
     }) => {
       const { data, error } = await supabase
