@@ -52,10 +52,10 @@ export async function manualOnboardingAction(input: {
 
   if (!newUser.user) return { error: 'Failed to create user' }
 
-  // Create the profile
+  // Update the profile (which is likely auto-created by a Supabase DB trigger on auth.users)
   const { error: profileError } = await admin
     .from('profiles')
-    .insert({
+    .upsert({
       id: newUser.user.id,
       email: input.email,
       full_name: input.fullName,
