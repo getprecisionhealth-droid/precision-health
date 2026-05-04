@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Check, Plus, X } from 'lucide-react'
+import { Check, Plus, X, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useProfile } from '@/hooks/use-data'
 import { profileSchema, type ProfileInput } from '@/lib/validations'
@@ -13,6 +13,66 @@ import { Input, Textarea, FormField } from '@/components/ui/input'
 import { PageHeader } from '@/components/layout/page-header'
 import { useQueryClient } from '@tanstack/react-query'
 import { KEYS } from '@/hooks/use-data'
+import { userUpdatePasswordAction } from '@/app/actions/onboarding-actions'
+
+function UpdatePasswordForm() {
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    setSuccess(false)
+    
+    const res = await userUpdatePasswordAction(password)
+    
+    setLoading(false)
+    if (res.error) {
+      setError(res.error)
+    } else if (res.success) {
+      setSuccess(true)
+      setPassword('')
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Security</CardTitle>
+        <CardDescription>Update your account password</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleUpdate} className="space-y-4 max-w-sm">
+          {success && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-400 text-sm flex items-center gap-2">
+              <Check className="h-4 w-4" /> Password updated successfully!
+            </div>
+          )}
+          <FormField label="New Password">
+            <Input
+              type="password"
+              placeholder="Enter new password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </FormField>
+          <Button type="submit" loading={loading}>
+            {!loading && <><Lock className="h-4 w-4 mr-2" /><span>Update Password</span></>}
+            {loading && 'Updating…'}
+          </Button>
+          {error && (
+            <p className="text-xs text-red-400">{error}</p>
+          )}
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
 
 const COMMON_CERTS = ['NASM-CPT', 'ACE-CPT', 'NSCA-CSCS', 'CrossFit L1', 'CrossFit L2', 'ISSA-CPT', 'ACSM-CPT']
 const COMMON_SPECS = ['Weight Loss', 'Muscle Gain', 'Strength Training', 'Cardio & Endurance', 'HIIT', 'Nutrition', 'Sports Performance', 'Rehabilitation', 'Flexibility & Mobility']
@@ -227,6 +287,10 @@ export default function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      <div className="mt-8">
+        <UpdatePasswordForm />
+      </div>
     </div>
   )
 }

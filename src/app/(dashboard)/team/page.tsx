@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { UserPlus, Users, Mail, ArrowRight, Check, Loader2, Link2, MessageCircle } from 'lucide-react'
+import { UserPlus, Users, Mail, ArrowRight, Check, Loader2, Link2, MessageCircle, Lock } from 'lucide-react'
 import { useOrganizationTrainers, useOrganizationClients, useInvitations, useSendInvite, useAssignTrainerToClient, useTrainerAssignments } from '@/hooks/use-data'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, UserAvatar, Skeleton, Badge } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/page-header'
 import { Input, FormField } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { manualOnboardingAction } from '@/app/actions/onboarding-actions'
+import { manualOnboardingAction, adminUpdateUserPasswordAction } from '@/app/actions/onboarding-actions'
 
 function InviteDialog({ role }: { role: 'trainer' | 'client' }) {
   const [email, setEmail] = useState('')
@@ -171,6 +171,57 @@ function ManualOnboardDialog() {
   )
 }
 
+function AdminEditPasswordDialog({ userId, userName }: { userId: string, userName: string }) {
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    setSuccess(false)
+    
+    const res = await adminUpdateUserPasswordAction(userId, password)
+    
+    setLoading(false)
+    if (res.error) {
+      setError(res.error)
+    } else if (res.success) {
+      setSuccess(true)
+      setPassword('')
+    }
+  }
+
+  return (
+    <form onSubmit={handleUpdate} className="space-y-4">
+      {success && (
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-400 text-sm flex items-center gap-2">
+          <Check className="h-4 w-4" /> Password updated successfully!
+        </div>
+      )}
+      <FormField label={`New Password for ${userName}`}>
+        <Input
+          type="password"
+          placeholder="Enter new password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          minLength={6}
+        />
+      </FormField>
+      <Button type="submit" className="w-full" loading={loading}>
+        {!loading && <><Lock className="h-4 w-4 mr-2" /><span>Update Password</span></>}
+        {loading && 'Updating…'}
+      </Button>
+      {error && (
+        <p className="text-xs text-red-400">{error}</p>
+      )}
+    </form>
+  )
+}
+
 export default function TeamPage() {
   const { data: trainers, isLoading: trainersLoading } = useOrganizationTrainers()
   const { data: clients, isLoading: clientsLoading } = useOrganizationClients()
@@ -257,22 +308,39 @@ export default function TeamPage() {
                 {trainers.map(t => {
                   const assignedCount = assignmentMap.get(t.id)?.length ?? 0
                   return (
-                    <button
+                    <div
                       key={t.id}
-                      onClick={() => setSelectedTrainer(t.id)}
-                      className={`w-full text-left flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                      className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                         selectedTrainer === t.id
                           ? 'border-indigo-500 bg-indigo-600/10'
                           : 'border-border-subtle hover:border-border hover:bg-surface-2'
                       }`}
                     >
-                      <UserAvatar name={t.full_name} src={t.avatar_url} size="sm" />
-                      <div className="flex-1 min-w-0">
-                         <p className="text-sm font-medium text-text-primary truncate">{t.full_name}</p>
-                         <p className="text-xs text-text-muted truncate">{t.email}</p>
+                      <button 
+                        onClick={() => setSelectedTrainer(t.id)}
+                        className="flex-1 flex items-center gap-3 text-left min-w-0"
+                      >
+                        <UserAvatar name={t.full_name} src={t.avatar_url} size="sm" />
+                        <div className="flex-1 min-w-0">
+                           <p className="text-sm font-medium text-text-primary truncate">{t.full_name}</p>
+                           <p className="text-xs text-text-muted truncate">{t.email}</p>
+                        </div>
+                        <span className="text-xs text-text-faint">{assignedCount} clients</span>
+                      </button>
+                      <div className="ml-4 pl-4 border-l border-border-subtle flex items-center justify-center">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-text-muted hover:text-text-primary" title="Change Password">
+                              <Lock className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader><DialogTitle>Edit Trainer Password</DialogTitle></DialogHeader>
+                            <AdminEditPasswordDialog userId={t.id} userName={t.full_name} />
+                          </DialogContent>
+                        </Dialog>
                       </div>
-                      <span className="text-xs text-text-faint">{assignedCount} clients</span>
-                    </button>
+                    </div>
                   )
                 })}
               </div>
@@ -299,21 +367,38 @@ export default function TeamPage() {
             ) : (
               <div className="space-y-2">
                 {clients.map(c => (
-                  <button
+                  <div
                     key={c.id}
-                    onClick={() => setSelectedClient(c.id)}
-                    className={`w-full text-left flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                    className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                       selectedClient === c.id
                         ? 'border-indigo-500 bg-indigo-600/10'
                         : 'border-border-subtle hover:border-border hover:bg-surface-2'
                     }`}
                   >
-                    <UserAvatar name={c.full_name} src={c.avatar_url} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-text-primary truncate">{c.full_name}</p>
-                      <p className="text-xs text-text-muted truncate">{c.email}</p>
+                    <button
+                      onClick={() => setSelectedClient(c.id)}
+                      className="flex-1 flex items-center gap-3 text-left min-w-0"
+                    >
+                      <UserAvatar name={c.full_name} src={c.avatar_url} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-text-primary truncate">{c.full_name}</p>
+                        <p className="text-xs text-text-muted truncate">{c.email}</p>
+                      </div>
+                    </button>
+                    <div className="ml-4 pl-4 border-l border-border-subtle flex items-center justify-center">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-text-muted hover:text-text-primary" title="Change Password">
+                            <Lock className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader><DialogTitle>Edit Client Password</DialogTitle></DialogHeader>
+                          <AdminEditPasswordDialog userId={c.id} userName={c.full_name} />
+                        </DialogContent>
+                      </Dialog>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}

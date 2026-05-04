@@ -4,6 +4,67 @@ import { useProfile, useMyTrainer } from '@/hooks/use-data'
 import { Card, CardContent, CardHeader, CardTitle, UserAvatar, Skeleton } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { userUpdatePasswordAction } from '@/app/actions/onboarding-actions'
+import { useState } from 'react'
+import { Check, Lock } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input, FormField } from '@/components/ui/input'
+
+function UpdatePasswordForm() {
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    setSuccess(false)
+    
+    const res = await userUpdatePasswordAction(password)
+    
+    setLoading(false)
+    if (res.error) {
+      setError(res.error)
+    } else if (res.success) {
+      setSuccess(true)
+      setPassword('')
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>Security</CardTitle></CardHeader>
+      <CardContent className="pt-0">
+        <form onSubmit={handleUpdate} className="space-y-4 max-w-sm">
+          {success && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-400 text-sm flex items-center gap-2">
+              <Check className="h-4 w-4" /> Password updated successfully!
+            </div>
+          )}
+          <FormField label="New Password">
+            <Input
+              type="password"
+              placeholder="Enter new password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </FormField>
+          <Button type="submit" loading={loading}>
+            {!loading && <><Lock className="h-4 w-4 mr-2" /><span>Update Password</span></>}
+            {loading && 'Updating…'}
+          </Button>
+          {error && (
+            <p className="text-xs text-red-400">{error}</p>
+          )}
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function ClientSettingsPage() {
   const { data: profile, isLoading } = useProfile()
@@ -78,6 +139,8 @@ export default function ClientSettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <UpdatePasswordForm />
         </div>
       )}
     </div>

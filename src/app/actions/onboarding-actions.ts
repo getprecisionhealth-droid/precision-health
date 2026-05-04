@@ -89,3 +89,53 @@ export async function manualOnboardingAction(input: {
     }
   }
 }
+
+export async function adminUpdateUserPasswordAction(userId: string, newPassword: string) {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return { error: 'Not authenticated' }
+
+  const admin = createAdminClient()
+
+  // Verify the inviter is an admin/admin_trainer
+  const { data: inviterProfile } = await admin
+    .from('profiles')
+    .select('organization_id, role')
+    .eq('id', user.id)
+    .single()
+
+  if (!inviterProfile?.organization_id) return { error: 'No organization found' }
+  if (!['admin', 'admin_trainer'].includes(inviterProfile.role)) {
+    return { error: 'Only admins can update user passwords' }
+  }
+
+  // Ensure the target user is in the same organization
+  const { data: targetProfile } = await admin
+    .from('profiles')
+    .select('organization_id')
+    .eq('id', userId)
+    .single()
+
+  if (targetProfile?.organization_id !== inviterProfile.organization_id) {
+    return { error: 'Cannot update password for user outside your organization' }
+  }
+
+  const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
+    password: newPassword
+  })
+
+  if (updateError) return { error: updateError.message }
+
+  return { success: true }
+}
+
+export async function userUpdatePasswordAction(newPassword: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword
+  })
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
